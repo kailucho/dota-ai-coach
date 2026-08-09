@@ -1,0 +1,9 @@
+[project]
+name = "dota-training"
+version = "0.1.0"
+description = "Offline ML training pipeline for Dota AI Coach — not part of the shipped .NET application. See docs/adr/0017."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,190 @@
+# The Python-side parallel to the C# [FairPlaySource] attribute
+# (src/DotaAiCoach.FairPlay/FairPlaySourceAttribute.cs), since Python
+# cannot import that type system. Every feature the model trains on must
+# be declared here with the same five fields dota-fairplay requires:
+# source, availability, visibility, fairPlayClassification, justification.
+#
+# fairPlayClassification values mirror DotaAiCoach.FairPlay.FairPlayClassification:
+#   LIVE_ALLOWED, VISIBLE_SCREEN, PUBLIC_PREFLIGHT, POSTGAME_ONLY,
+#   SPECTATOR_ONLY, FORBIDDEN.
+#
+# This baseline intentionally includes POSTGAME_ONLY features (per the
+# user's explicit choice — see docs/adr/0017) to get the best possible
+# baseline signal for validating the pipeline. It is NOT wired into the
+# live app. A future live-eligible variant must select only the
+# live_allowed_feature_subset (see stages/dataset.py's metadata output).
+
+features:
+  - name: gold_adv_at_T
+    source: OpenDotaParsedMatch.radiant_gold_adv[T]
+    availability: MinuteIndexed
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Net worth advantage between the two teams is shown on the in-game scoreboard."
+    timestamp_bound: true
+
+  - name: xp_adv_at_T
+    source: OpenDotaParsedMatch.radiant_xp_adv[T]
+    availability: MinuteIndexed
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "XP advantage is derivable from each hero's visible level/XP bar."
+    timestamp_bound: true
+
+  - name: gold_adv_slope_5
+    source: OpenDotaParsedMatch.radiant_gold_adv[T] - radiant_gold_adv[T-5]
+    availability: MinuteIndexed
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Derived from the same visible net worth advantage, just over a 5-minute window."
+    timestamp_bound: true
+
+  - name: xp_adv_slope_5
+    source: OpenDotaParsedMatch.radiant_xp_adv[T] - radiant_xp_adv[T-5]
+    availability: MinuteIndexed
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Derived from the same visible XP advantage, over a 5-minute window."
+    timestamp_bound: true
+
+  - name: lh_diff_at_T
+    source: OpenDotaParsedMatch.players[].lh_t[T], summed per side
+    availability: MinuteIndexed
+    visibility: PostgameOnly
+    fairPlayClassification: POSTGAME_ONLY
+    justification: "Enemy last-hit counts per hero are not directly visible to the opposing team live; only net worth/level proxies are. Research-only for this baseline."
+    timestamp_bound: true
+
+  - name: gold_gini_radiant
+    source: OpenDotaParsedMatch.players[radiant].gold_t[T]
+    availability: MinuteIndexed
+    visibility: PostgameOnly
+    fairPlayClassification: POSTGAME_ONLY
+    justification: "Requires each individual hero's exact gold value, not just team net worth advantage — not legitimately knowable live for the enemy team."
+    timestamp_bound: true
+
+  - name: gold_gini_dire
+    source: OpenDotaParsedMatch.players[dire].gold_t[T]
+    availability: MinuteIndexed
+    visibility: PostgameOnly
+    fairPlayClassification: POSTGAME_ONLY
+    justification: "Same as gold_gini_radiant, for the Dire side."
+    timestamp_bound: true
+
+  - name: max_hero_gold_diff
+    source: OpenDotaParsedMatch.players[].gold_t[T]
+    availability: MinuteIndexed
+    visibility: PostgameOnly
+    fairPlayClassification: POSTGAME_ONLY
+    justification: "Requires knowing the single richest hero's exact gold on each side, including the enemy team's — not legitimately visible live."
+    timestamp_bound: true
+
+  - name: kills_diff_at_T
+    source: OpenDotaParsedMatch.players[].kills_log[], filtered time<=T*60
+    availability: EventTimestamped
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Total kill counts per team are shown on the scoreboard throughout the match."
+    timestamp_bound: true
+
+  - name: deaths_in_last_5min_diff
+    source: OpenDotaParsedMatch.players[].kills_log[], filtered (T-5)*60<time<=T*60
+    availability: EventTimestamped
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Recent kill/death events are visible via the kill feed."
+    timestamp_bound: true
+
+  - name: teamfights_won_diff
+    source: OpenDotaParsedMatch.teamfights[], filtered start<=T*60
+    availability: EventTimestamped
+    visibility: PostgameOnly
+    fairPlayClassification: POSTGAME_ONLY
+    justification: "Teamfight boundary detection and per-fight net gold/kill outcome is an OpenDota-parsed analytical construct, not something a player observes directly as a labeled event live."
+    timestamp_bound: true
+
+  - name: towers_killed_diff
+    source: OpenDotaParsedMatch.objectives[], type=building_kill, filtered time<=T*60
+    availability: EventTimestamped
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Tower destruction is announced to all players and reflected on the minimap/scoreboard."
+    timestamp_bound: true
+
+  - name: roshan_killed_diff
+    source: OpenDotaParsedMatch.objectives[], type=CHAT_MESSAGE_ROSHAN_KILL, filtered time<=T*60
+    availability: EventTimestamped
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Roshan kills are announced via a global chat message to all players."
+    timestamp_bound: true
+
+  - name: barracks_killed_diff
+    source: OpenDotaParsedMatch.objectives[], type=building_kill (barracks), filtered time<=T*60
+    availability: EventTimestamped
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "Barracks destruction is announced to all players."
+    timestamp_bound: true
+
+  - name: first_blood_radiant
+    source: OpenDotaParsedMatch.first_blood_time, OpenDotaParsedMatch.objectives[] (CHAT_MESSAGE_FIRSTBLOOD)
+    availability: EventTimestamped
+    visibility: VisibleScreen
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "First blood is announced via a global chat message."
+    timestamp_bound: true
+
+  - name: hero_pick_winrate_diff
+    source: NORMALIZED historical hero winrate, joined by the match's own patch, computed from the train split only
+    availability: MatchStart
+    visibility: PublicPreflight
+    fairPlayClassification: PUBLIC_PREFLIGHT
+    justification: "Hero winrate statistics are public information (e.g. via OpenDota/Dotabuff) independent of the live match, known before the game starts."
+    timestamp_bound: false
+
+  - name: avg_rank_tier
+    source: OpenDota public_matches.avg_rank_tier
+    availability: MatchStart
+    visibility: PublicPreflight
+    fairPlayClassification: PUBLIC_PREFLIGHT
+    justification: "An aggregate skill-bracket signal for the match, not tied to any single player's hidden data."
+    timestamp_bound: false
+
+  - name: minute_T
+    source: derived (the sampling timestamp itself)
+    availability: Always
+    visibility: LiveAllowed
+    fairPlayClassification: LIVE_ALLOWED
+    justification: "The in-game clock is always visible to the player."
+    timestamp_bound: true
+
+  - name: patch
+    source: OpenDotaParsedMatch.patch
+    availability: MatchStart
+    visibility: PublicPreflight
+    fairPlayClassification: PUBLIC_PREFLIGHT
+    justification: "The current game patch is public knowledge, visible in the client's main menu."
+    timestamp_bound: false
+
+  - name: key_item_count_diff
+    source: OpenDotaParsedMatch.players[].purchase_log[], filtered to a key-item whitelist, time<=T*60
+    availability: EventTimestamped
+    visibility: PostgameOnly
+    fairPlayClassification: POSTGAME_ONLY
+    justification: "The enemy team's exact purchase log/timing is not visible live; only items actually carried and revealed on their model (once seen) are legitimately observable, which this feature does not restrict to."
+    timestamp_bound: true
+
+excluded_as_leakage:
+  # Each entry names the OpenDota field(s) and the leakage pattern from
+  # dota-ml/references/leakage-and-feature-availability.md it matches.
+  - fields: [gold_per_min, xp_per_min, kda, net_worth, level, last_hits]
+    pattern: "1 — full-match aggregate used as a per-timestamp feature"
+  - fields: [radiant_win, win, lose, loss]
+    pattern: "2 — the label itself / outcome-derived"
+  - fields: [duration]
+    pattern: "2 — strong outcome proxy (long games correlate with closeness); used only as a DATASET-stage filter, never as a feature"
+  - fields: [benchmarks, lane_efficiency_pct, teamfight_participation, pred_vict, computed_mmr]
+    pattern: "1 — full-match-derived analytical fields"
+  - fields: [tower_status_radiant, tower_status_dire, barracks_status_radiant, barracks_status_dire]
+    pattern: "1 — end-of-match bitmask state, not time-indexed"

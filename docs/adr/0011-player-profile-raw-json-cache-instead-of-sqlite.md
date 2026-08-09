@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted
+Accepted. **The Fase 3 deferral trigger has now happened**: `docs/adr/0017`
+built the Fase 3 offline pipeline on Parquet + DuckDB-style tooling, not
+SQLite — a conscious choice, not a default. This ADR's JSON RAW cache
+remains the correct choice for Fase 2's live-app profile caching; ADR-0017
+covers the separate, Python-side training pipeline's data layer.
 
 ## Context
 
