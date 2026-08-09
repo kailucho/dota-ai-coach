@@ -155,47 +155,52 @@ state at timestamp T)`, no ONNX export, no live wiring, no other models
 - [x] Four-way temporal split (train/val/calib/test), calibration fit on
       a dedicated third split, **test touched exactly once**.
 - [x] Logistic Regression vs. LightGBM: **LightGBM did not beat the
-      simpler model** (AUC gain below the 0.01 threshold on two separate
-      runs) — the pipeline correctly kept Logistic Regression, the
-      "permission to stop at baseline" outcome `dota-ml` treats as a good
-      result, not a shortfall.
-- [x] Final test metrics (touched once): **AUC-ROC 0.777, log loss 0.564,
-      Brier 0.192** — beats the constant-0.5 baseline decisively.
-      Segmented evaluation confirms the expected early-game-weak
-      (AUC 0.674) / late-game-strong (AUC 0.868) pattern; domain
-      monotonicity sanity check passed cleanly.
+      simpler model** on either run — the pipeline correctly kept
+      Logistic Regression, the "permission to stop at baseline" outcome
+      `dota-ml` treats as a good result, not a shortfall.
+- [x] Final test metrics (touched once, after the regularization fix
+      below): **AUC-ROC 0.839, log loss 0.506, Brier 0.162** — beats the
+      constant-0.5 baseline decisively and comfortably beats the
+      single-feature baseline too. Segmented evaluation confirms the
+      expected early-game-weaker (AUC 0.762) / late-game-stronger
+      (AUC 0.900) pattern; all domain sanity checks (monotonicity,
+      near-even-at-zero, symmetry) pass.
+- [x] **Regression investigated and fixed** (`docs/adr/0018`): the first
+      trained model scored val AUC 0.741 — *worse* than a single-feature
+      baseline (0.793) — traced to severe multicollinearity among the
+      economic-advantage features (`gold_adv_at_T`/`xp_adv_at_T`/their
+      slope variants correlate 0.63-0.91) combined with too-weak default
+      L2 regularization. A val-selected `C` grid search fixed it (val AUC
+      0.741→0.792) with **no features removed** — confirmed by a control
+      that pruning alone barely moved AUC (0.740), isolating
+      regularization strength as the actual cause.
 - [x] 38 automated tests (leakage, features, split ordering, data
       quality, patch-pinning) — all green, all against real captured
       match data, not synthetic-only fixtures.
-- [x] Full reproducibility record (`metadata.json`) and evaluation record
-      (`evaluation.json`) committed alongside the model.
+- [x] Full reproducibility record (`metadata.json`, including the full
+      `C` search results) and evaluation record (`evaluation.json`)
+      committed alongside the model.
 
 **Known limitations, reported honestly rather than hidden** (full detail
-in `docs/adr/0017`'s Consequences): the full 18-feature model scored
-*lower* on val AUC than the single-feature `gold_adv_at_T` baseline alone
-— worth investigating (feature pruning/regularization) before extending
-this baseline; all 1863 matches landed on a single patch, so by-patch
-segmentation and patch-robustness are untested; a symmetry domain sanity
-check failed and should be revisited; this model mixes `POSTGAME_ONLY`
-features (enemy exact gold/items) by explicit user choice for baseline
-signal strength and is **research-only** — not live-eligible without a
-retrain restricted to `features_spec.yaml`'s `LIVE_ALLOWED` subset.
+in `docs/adr/0017`/`docs/adr/0018`'s Consequences): all 1863 matches
+landed on a single patch, so by-patch segmentation and patch-robustness
+are untested; the gold-advantage monotonicity sanity check now shows a
+much flatter response to any single feature swept in isolation (an
+expected side effect of strong regularization, not a new bug — the
+model relies on the combination of correlated signals together); this
+model mixes `POSTGAME_ONLY` features (enemy exact gold/items) by explicit
+user choice for baseline signal strength and is **research-only** — not
+live-eligible without a retrain restricted to `features_spec.yaml`'s
+`LIVE_ALLOWED` subset.
 
 ## Recommended next phase
 
-Two reasonable directions, in priority order:
-
-1. **Investigate the Win Probability baseline's feature-set regression**
-   (full model underperforming the single-feature baseline) before
-   extending it further — likely feature pruning, regularization, or more
-   training data resolves it; cheap to investigate relative to building
-   the next model on top of an unexplained regression.
-2. **Fase 3, full scope**: draft baseline and item recommendation ranker
-   (both still per `docs/MASTER_PLAN.md`'s ML baselines module), and
-   eventually a genuinely production-scale RAW→BRONZE→NORMALIZED→
-   FEATURES→DATASET rebuild (the ~1863-match dataset built here becomes a
-   seed, not a discard, for that rebuild) before ONNX export and live
-   wiring are considered.
+**Fase 3, full scope**: draft baseline and item recommendation ranker
+(both still per `docs/MASTER_PLAN.md`'s ML baselines module), and
+eventually a genuinely production-scale RAW→BRONZE→NORMALIZED→
+FEATURES→DATASET rebuild (the ~1863-match dataset built here becomes a
+seed, not a discard, for that rebuild) before ONNX export and live wiring
+are considered.
 
 Do **not** skip ahead to Computer Vision or advanced personalization
 before these — per `docs/MASTER_PLAN.md`'s explicit sequencing and

@@ -1,11 +1,11 @@
 {
-  "model_id": "win-probability-v1.0-20260809T163642Z",
+  "model_id": "win-probability-v1.0-20260809T165319Z",
   "model_name": "win-probability",
   "version": {
     "major": 1,
     "minor": 0
   },
-  "training_run_id": "20260809T163642Z",
+  "training_run_id": "20260809T165319Z",
   "data": {
     "dataset_id": "ranked-ad-1863-20260809",
     "features_version": "1.0",
@@ -44,7 +44,7 @@
     }
   },
   "code": {
-    "git_commit": "c0e0ef877af01d6da7a9d8a026efe03189a156d5"
+    "git_commit": "db221a6dfd694ea3d4be3bcc5e41e3c0f1eb9aa7"
   },
   "hyperparameters": {
     "chosen_model": "logistic_regression",
@@ -58,15 +58,34 @@
       "verbosity": -1
     },
     "logistic_regression": {
-      "max_iter": 1000,
-      "random_state": 42
+      "max_iter": 3000,
+      "random_state": 42,
+      "C": 1e-06,
+      "C_search_candidates": [
+        1.0,
+        0.1,
+        0.01,
+        0.001,
+        0.0001,
+        1e-05,
+        1e-06
+      ],
+      "C_search_val_auc": {
+        "1.0": 0.7409165535608508,
+        "0.1": 0.7411882407264891,
+        "0.01": 0.7458780509419265,
+        "0.001": 0.7677867640542722,
+        "0.0001": 0.7879848974585006,
+        "1e-05": 0.7920706992971115,
+        "1e-06": 0.7924671526718626
+      }
     }
   },
   "seeds": {
     "random_seed": 42
   },
   "libraries": {
-    "python": null,
+    "python": "3.11.1",
     "lightgbm": "4.7.0",
     "scikit-learn": "1.9.0",
     "pandas": "3.0.5",

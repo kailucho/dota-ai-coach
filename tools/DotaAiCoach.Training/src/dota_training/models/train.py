@@ -100,8 +100,27 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
     baseline_single_feature_metrics = core_metrics(y_val, baseline_single_feature_proba)
     log.info("baseline (single-feature LogReg on %s) on val: %s", ABLATION_FEATURE, baseline_single_feature_metrics)
 
-    # --- Model 1: full Logistic Regression ---
-    logreg = LogisticRegression(max_iter=1000, random_state=RANDOM_SEED)
+    # --- Model 1: full Logistic Regression, with C selected on val ---
+    # Several features are strongly collinear (gold_adv_at_T vs
+    # xp_adv_at_T vs their _slope_5 variants all measure economic
+    # advantage, correlation ~0.75-0.91) -- sklearn's default C=1.0 is far
+    # too weak L2 given that, and the full feature set scored WORSE than
+    # a single-feature baseline as a direct result (val AUC 0.74 vs 0.79).
+    # Selecting C via a small grid on val (never test) resolves this
+    # without dropping any feature's signal. See docs/adr/0018.
+    candidate_c_values = [1.0, 0.1, 0.01, 0.001, 1e-4, 1e-5, 1e-6]
+    best_c, best_c_auc = None, -1.0
+    c_search_results = {}
+    for c in candidate_c_values:
+        candidate = LogisticRegression(max_iter=3000, random_state=RANDOM_SEED, C=c)
+        candidate.fit(x_train_scaled, y_train)
+        candidate_auc = core_metrics(y_val, candidate.predict_proba(x_val_scaled)[:, 1])["auc_roc"]
+        c_search_results[c] = candidate_auc
+        if candidate_auc > best_c_auc:
+            best_c, best_c_auc = c, candidate_auc
+    log.info("LogisticRegression C search on val AUC: %s -- selected C=%s", c_search_results, best_c)
+
+    logreg = LogisticRegression(max_iter=3000, random_state=RANDOM_SEED, C=best_c)
     logreg.fit(x_train_scaled, y_train)
     logreg_val_proba = logreg.predict_proba(x_val_scaled)[:, 1]
     logreg_val_metrics = core_metrics(y_val, logreg_val_proba)
@@ -230,7 +249,11 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
             "split_cutoffs": dataset_metadata["splits"],
         },
         "code": {"git_commit": _git_commit()},
-        "hyperparameters": {"chosen_model": chosen_model_name, "lightgbm": lgbm_params, "logistic_regression": {"max_iter": 1000, "random_state": RANDOM_SEED}},
+        "hyperparameters": {
+            "chosen_model": chosen_model_name,
+            "lightgbm": lgbm_params,
+            "logistic_regression": {"max_iter": 3000, "random_state": RANDOM_SEED, "C": best_c, "C_search_candidates": candidate_c_values, "C_search_val_auc": c_search_results},
+        },
         "seeds": {"random_seed": RANDOM_SEED},
         "libraries": {
             "python": sys.version.split()[0],
