@@ -1,0 +1,178 @@
+{
+  "baselines": {
+    "constant_train_prior": {
+      "auc_roc": 0.5,
+      "log_loss": 0.6912900367117818,
+      "brier": 0.24907200259797302,
+      "n": 279
+    },
+    "single_feature_logreg_hero_winrate_diff": {
+      "auc_roc": 0.4810191871260574,
+      "log_loss": 0.6967181330305442,
+      "brier": 0.25173699954710393,
+      "n": 279
+    }
+  },
+  "model": {
+    "logistic_regression": {
+      "auc_roc": 0.508355683928203,
+      "log_loss": 1.3261148221825947,
+      "brier": 0.37222003095138534,
+      "n": 279
+    }
+  },
+  "logreg_coefficients": {
+    "hero_winrate_diff": -0.7825252466582981,
+    "matchup_advantage": 6.0071952876553
+  },
+  "c_search_results": {
+    "1.0": 0.508355683928203,
+    "0.1": 0.5043325768516608,
+    "0.01": 0.49303693005983085,
+    "0.001": 0.48628017330307405
+  },
+  "calibration": {
+    "pre_calibration_ece_val": 0.32607577308507135,
+    "post_calibration_ece_val": 0.04032621421306522,
+    "pre_calibration_curve_val": [
+      {
+        "bin": 0,
+        "predicted_mean": 0.037703870015613435,
+        "observed_rate": 0.48214285714285715,
+        "n": 56
+      },
+      {
+        "bin": 1,
+        "predicted_mean": 0.14829381588500173,
+        "observed_rate": 0.5517241379310345,
+        "n": 29
+      },
+      {
+        "bin": 2,
+        "predicted_mean": 0.23414189246166434,
+        "observed_rate": 0.6666666666666666,
+        "n": 15
+      },
+      {
+        "bin": 3,
+        "predicted_mean": 0.3552631820577324,
+        "observed_rate": 0.4666666666666667,
+        "n": 15
+      },
+      {
+        "bin": 4,
+        "predicted_mean": 0.45096934004867467,
+        "observed_rate": 0.5,
+        "n": 14
+      },
+      {
+        "bin": 5,
+        "predicted_mean": 0.5483758799274591,
+        "observed_rate": 0.631578947368421,
+        "n": 19
+      },
+      {
+        "bin": 6,
+        "predicted_mean": 0.653072644014989,
+        "observed_rate": 0.42857142857142855,
+        "n": 21
+      },
+      {
+        "bin": 7,
+        "predicted_mean": 0.7730460690426877,
+        "observed_rate": 0.5,
+        "n": 18
+      },
+      {
+        "bin": 8,
+        "predicted_mean": 0.849188964572698,
+        "observed_rate": 0.6551724137931034,
+        "n": 29
+      },
+      {
+        "bin": 9,
+        "predicted_mean": 0.9635719353916989,
+        "observed_rate": 0.5079365079365079,
+        "n": 63
+      }
+    ],
+    "post_calibration_curve_val": [
+      {
+        "bin": 0,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 1,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 2,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 3,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 4,
+        "predicted_mean": 0.42498148765707133,
+        "observed_rate": 0.4918032786885246,
+        "n": 61
+      },
+      {
+        "bin": 5,
+        "predicted_mean": 0.5588235294117646,
+        "observed_rate": 0.5432692307692307,
+        "n": 208
+      },
+      {
+        "bin": 6,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 7,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 8,
+        "predicted_mean": 0.8,
+        "observed_rate": 0.6,
+        "n": 5
+      },
+      {
+        "bin": 9,
+        "predicted_mean": 0.9879180789759001,
+        "observed_rate": 0.4,
+        "n": 5
+      }
+    ]
+  },
+  "test_metrics_touched_once": {
+    "auc_roc": 0.5305597964376589,
+    "log_loss": 0.8169774041631643,
+    "brier": 0.2508374821780825,
+    "n": 281
+  },
+  "domain_sanity_checks": {
+    "top5_vs_bottom5_heroes": {
+      "passed": true,
+      "p_radiant_wins_with_top5": 0.7907914130185281,
+      "p_radiant_wins_with_bottom5": 0.33418383316807243
+    }
+  },
+  "overall_train_winrate_prior": 0.5308863025962399,
+  "hero_winrate_table_size": 254,
+  "matchup_matrix_size": 6682
+}

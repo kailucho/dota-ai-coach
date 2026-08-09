@@ -193,14 +193,53 @@ user choice for baseline signal strength and is **research-only** — not
 live-eligible without a retrain restricted to `features_spec.yaml`'s
 `LIVE_ALLOWED` subset.
 
+## Fase 3 (scoped) — Draft baseline — DELIVERED
+
+Scoped to `dota-ml`'s own baseline list for Draft: hero global winrate +
+matchup matrix + logistic regression, reusing the win-probability
+model's dataset/split infrastructure. Full detail in `docs/adr/0019`.
+
+- [x] `models/draft_baseline.py` — one row per match (no timestamp
+      dimension), Bayesian-shrunk hero winrate table + shrunk matchup
+      matrix, Logistic Regression over both.
+- [x] **Real bug found and fixed**: the first version's hero winrate
+      table had no shrinkage at all (raw empirical rates, e.g. 100% on 71
+      games) — exactly `dota-ml`'s "8/10 games, noisy and overconfident"
+      failure mode. Caught by the domain sanity check (top-5-winrate
+      heroes should beat bottom-5) actually **failing** — the unshrunk
+      model predicted the opposite direction. Fixed with the same
+      shrinkage discipline already used for the matchup matrix; the
+      sanity check now passes decisively (79% vs 33%). Permanent
+      regression tests added.
+- [x] **Honest result**: draft alone barely predicts outcome in this
+      dataset — final test AUC **0.531**, only marginally above chance.
+      Reported as a genuine finding, not tuned or hidden: at pub-bracket
+      ranked skill levels, draft quality matters far less than in-game
+      execution, which is consistent with the Win Probability model
+      (which observes live state) scoring AUC 0.839 on the same match
+      population.
+- [x] Investigated an implausibly strong train-only feature correlation
+      (0.87) before trusting or dismissing it, per `dota-ml`'s ablation-
+      sanity guidance — confirmed it was overfitting to a sparse matchup
+      table (held-out val correlation ~0.00), not a leakage bug.
+- [x] 43 automated tests total (5 new for this model) — all green.
+
+**Known limitation**: this baseline's predictive power is too weak to
+use for any real recommendation as-is. It exists as the required
+baseline and as a concrete scoping data point — a future draft model
+needs more training data, richer features, or both (see
+`docs/MASTER_PLAN.md`'s fuller Draft Coach representation for what those
+richer features would look like).
+
 ## Recommended next phase
 
-**Fase 3, full scope**: draft baseline and item recommendation ranker
-(both still per `docs/MASTER_PLAN.md`'s ML baselines module), and
-eventually a genuinely production-scale RAW→BRONZE→NORMALIZED→
-FEATURES→DATASET rebuild (the ~1863-match dataset built here becomes a
-seed, not a discard, for that rebuild) before ONNX export and live wiring
-are considered.
+**Fase 3 remainder**: item recommendation ranker (the third model in
+`docs/MASTER_PLAN.md`'s ML baselines module — a ranking task, not binary
+classification, so it needs a different evaluation approach than the two
+models built so far), and eventually a genuinely production-scale
+RAW→BRONZE→NORMALIZED→FEATURES→DATASET rebuild (the ~1863-match dataset
+built here becomes a seed, not a discard, for that rebuild) before ONNX
+export and live wiring are considered for any of these three models.
 
 Do **not** skip ahead to Computer Vision or advanced personalization
 before these — per `docs/MASTER_PLAN.md`'s explicit sequencing and
