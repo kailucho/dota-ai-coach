@@ -1,0 +1,241 @@
+{
+	"provider": {
+		"name": "Dota 2",
+		"appid": 570,
+		"version": 48,
+		"timestamp": 1786272777
+	},
+	"map": {
+		"name": "start",
+		"matchid": "0",
+		"game_time": 51,
+		"clock_time": -80,
+		"daytime": false,
+		"nightstalker_night": false,
+		"radiant_score": 0,
+		"dire_score": 0,
+		"game_state": "DOTA_GAMERULES_STATE_PRE_GAME",
+		"paused": false,
+		"win_team": "none",
+		"customgamename": "",
+		"ward_purchase_cooldown": 0
+	},
+	"player": {
+		"steamid": "76561198047111232",
+		"accountid": "86845504",
+		"name": "k4ido",
+		"activity": "playing",
+		"kills": 0,
+		"deaths": 0,
+		"assists": 0,
+		"last_hits": 0,
+		"denies": 0,
+		"kill_streak": 0,
+		"commands_issued": 0,
+		"kill_list": {
+
+		},
+		"team_name": "radiant",
+		"player_slot": 0,
+		"team_slot": 0,
+		"gold": 100,
+		"gold_reliable": 0,
+		"gold_unreliable": 100,
+		"gold_from_hero_kills": 0,
+		"gold_from_creep_kills": 0,
+		"gold_from_summon_kills": 0,
+		"gold_from_income": 0,
+		"gold_from_shared": 0,
+		"gpm": 0,
+		"xpm": 0
+	},
+	"hero": {
+		"facet": 0,
+		"xpos": -6700,
+		"ypos": -6700,
+		"id": 60,
+		"name": "npc_dota_hero_night_stalker",
+		"level": 1,
+		"xp": 0,
+		"alive": true,
+		"respawn_seconds": 0,
+		"buyback_cost": 246,
+		"buyback_cooldown": 0,
+		"health": 626,
+		"max_health": 626,
+		"health_percent": 100,
+		"mana": 255,
+		"max_mana": 255,
+		"mana_percent": 100,
+		"silenced": false,
+		"stunned": false,
+		"disarmed": false,
+		"magicimmune": false,
+		"hexed": false,
+		"muted": false,
+		"break": false,
+		"aghanims_scepter": false,
+		"aghanims_shard": false,
+		"smoked": false,
+		"permanent_buffs": {
+
+		},
+		"has_debuff": false,
+		"talent_1": false,
+		"talent_2": false,
+		"talent_3": false,
+		"talent_4": false,
+		"talent_5": false,
+		"talent_6": false,
+		"talent_7": false,
+		"talent_8": false,
+		"attributes_level": 0
+	},
+	"abilities": {
+		"ability0": {
+			"name": "night_stalker_void",
+			"level": 0,
+			"can_cast": false,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"ultimate": false
+		},
+		"ability1": {
+			"name": "night_stalker_crippling_fear",
+			"level": 0,
+			"can_cast": false,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"ultimate": false
+		},
+		"ability2": {
+			"name": "night_stalker_midnight_feast",
+			"level": 0,
+			"can_cast": false,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"ultimate": false
+		},
+		"ability3": {
+			"name": "night_stalker_darkness",
+			"level": 0,
+			"can_cast": false,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"ultimate": true
+		}
+	},
+	"items": {
+		"slot0": {
+			"name": "item_boots",
+			"purchaser": 0,
+			"item_level": 1,
+			"passive": true
+		},
+		"slot1": {
+			"name": "empty"
+		},
+		"slot2": {
+			"name": "empty"
+		},
+		"slot3": {
+			"name": "empty"
+		},
+		"slot4": {
+			"name": "empty"
+		},
+		"slot5": {
+			"name": "empty"
+		},
+		"slot6": {
+			"name": "empty"
+		},
+		"slot7": {
+			"name": "empty"
+		},
+		"slot8": {
+			"name": "empty"
+		},
+		"stash0": {
+			"name": "empty"
+		},
+		"stash1": {
+			"name": "empty"
+		},
+		"stash2": {
+			"name": "empty"
+		},
+		"stash3": {
+			"name": "empty"
+		},
+		"stash4": {
+			"name": "empty"
+		},
+		"stash5": {
+			"name": "empty"
+		},
+		"teleport0": {
+			"name": "item_tpscroll",
+			"purchaser": 0,
+			"item_level": 1,
+			"can_cast": false,
+			"cooldown": 96,
+			"max_cooldown": 101,
+			"passive": false,
+			"item_charges": 1,
+			"charges": 1
+		},
+		"neutral0": {
+			"name": "empty"
+		},
+		"neutral1": {
+			"name": "empty"
+		},
+		"preserved_neutral6": {
+			"name": "empty"
+		},
+		"preserved_neutral7": {
+			"name": "empty"
+		},
+		"preserved_neutral8": {
+			"name": "empty"
+		},
+		"preserved_neutral9": {
+			"name": "empty"
+		},
+		"preserved_neutral10": {
+			"name": "empty"
+		}
+	},
+	"previously": {
+		"player": {
+			"gold": 600,
+			"gold_unreliable": 600
+		},
+		"items": {
+			"slot0": {
+				"name": "empty"
+			},
+			"teleport0": {
+				"cooldown": 97
+			}
+		}
+	},
+	"added": {
+		"items": {
+			"slot0": {
+				"purchaser": true,
+				"item_level": true,
+				"passive": true
+			}
+		}
+	}
+}

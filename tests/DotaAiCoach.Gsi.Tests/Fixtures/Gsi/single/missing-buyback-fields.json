@@ -1,0 +1,13 @@
+{
+  "provider": { "name": "Dota 2", "appid": 570, "version": 47, "timestamp": 1700000040 },
+  "hero": {
+    "id": 6,
+    "name": "npc_dota_hero_juggernaut",
+    "level": 8,
+    "alive": true,
+    "health": 600,
+    "max_health": 780,
+    "mana": 150,
+    "max_mana": 260
+  }
+}

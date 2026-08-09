@@ -1,0 +1,324 @@
+{
+	"provider": {
+		"name": "Dota 2",
+		"appid": 570,
+		"version": 48,
+		"timestamp": 1786272961
+	},
+	"map": {
+		"name": "start",
+		"matchid": "0",
+		"game_time": 236,
+		"clock_time": 104,
+		"daytime": true,
+		"nightstalker_night": false,
+		"radiant_score": 3,
+		"dire_score": 2,
+		"game_state": "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS",
+		"paused": false,
+		"win_team": "none",
+		"customgamename": "",
+		"ward_purchase_cooldown": 0
+	},
+	"player": {
+		"steamid": "76561198047111232",
+		"accountid": "86845504",
+		"name": "k4ido",
+		"activity": "playing",
+		"kills": 1,
+		"deaths": 2,
+		"assists": 0,
+		"last_hits": 4,
+		"denies": 0,
+		"kill_streak": 0,
+		"commands_issued": 277,
+		"kill_list": {
+			"victimid_6": 1
+		},
+		"team_name": "radiant",
+		"player_slot": 0,
+		"team_slot": 0,
+		"gold": 112,
+		"gold_reliable": 49,
+		"gold_unreliable": 63,
+		"gold_from_hero_kills": 207,
+		"gold_from_creep_kills": 156,
+		"gold_from_summon_kills": 0,
+		"gold_from_income": 157,
+		"gold_from_shared": 74,
+		"gpm": 345,
+		"xpm": 213
+	},
+	"hero": {
+		"facet": 0,
+		"xpos": -1634,
+		"ypos": 6334,
+		"id": 60,
+		"name": "npc_dota_hero_night_stalker",
+		"level": 2,
+		"xp": 370,
+		"alive": false,
+		"respawn_seconds": 11,
+		"buyback_cost": 287,
+		"buyback_cooldown": 0,
+		"health": 0,
+		"max_health": 692,
+		"health_percent": 0,
+		"mana": 62,
+		"max_mana": 267,
+		"mana_percent": 23,
+		"silenced": false,
+		"stunned": false,
+		"disarmed": false,
+		"magicimmune": false,
+		"hexed": false,
+		"muted": false,
+		"break": false,
+		"aghanims_scepter": false,
+		"aghanims_shard": false,
+		"smoked": false,
+		"permanent_buffs": {
+
+		},
+		"has_debuff": false,
+		"talent_1": false,
+		"talent_2": false,
+		"talent_3": false,
+		"talent_4": false,
+		"talent_5": false,
+		"talent_6": false,
+		"talent_7": false,
+		"talent_8": false,
+		"attributes_level": 0
+	},
+	"abilities": {
+		"ability0": {
+			"name": "night_stalker_void",
+			"level": 1,
+			"can_cast": true,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 12,
+			"ultimate": false
+		},
+		"ability1": {
+			"name": "night_stalker_crippling_fear",
+			"level": 1,
+			"can_cast": false,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 5,
+			"max_cooldown": 31,
+			"ultimate": false
+		},
+		"ability2": {
+			"name": "night_stalker_midnight_feast",
+			"level": 0,
+			"can_cast": false,
+			"passive": true,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"ultimate": false
+		},
+		"ability3": {
+			"name": "night_stalker_darkness",
+			"level": 0,
+			"can_cast": false,
+			"passive": false,
+			"ability_active": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"ultimate": true
+		}
+	},
+	"items": {
+		"slot0": {
+			"name": "item_boots",
+			"purchaser": 0,
+			"item_level": 1,
+			"passive": true
+		},
+		"slot1": {
+			"name": "item_tango",
+			"purchaser": 0,
+			"item_level": 1,
+			"can_cast": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"passive": false,
+			"item_charges": 2,
+			"charges": 2
+		},
+		"slot2": {
+			"name": "item_branches",
+			"purchaser": 0,
+			"item_level": 1,
+			"can_cast": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"passive": false
+		},
+		"slot3": {
+			"name": "item_branches",
+			"purchaser": 0,
+			"item_level": 1,
+			"can_cast": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"passive": false
+		},
+		"slot4": {
+			"name": "item_recipe_magic_wand",
+			"purchaser": 0,
+			"item_level": 1,
+			"can_cast": true,
+			"cooldown": 0,
+			"max_cooldown": 0,
+			"passive": false
+		},
+		"slot5": {
+			"name": "empty"
+		},
+		"slot6": {
+			"name": "empty"
+		},
+		"slot7": {
+			"name": "empty"
+		},
+		"slot8": {
+			"name": "empty"
+		},
+		"stash0": {
+			"name": "empty"
+		},
+		"stash1": {
+			"name": "empty"
+		},
+		"stash2": {
+			"name": "empty"
+		},
+		"stash3": {
+			"name": "empty"
+		},
+		"stash4": {
+			"name": "empty"
+		},
+		"stash5": {
+			"name": "empty"
+		},
+		"teleport0": {
+			"name": "item_tpscroll",
+			"purchaser": 0,
+			"item_level": 1,
+			"can_cast": false,
+			"cooldown": 17,
+			"max_cooldown": 81,
+			"passive": false,
+			"item_charges": 2,
+			"charges": 2
+		},
+		"neutral0": {
+			"name": "empty"
+		},
+		"neutral1": {
+			"name": "empty"
+		},
+		"preserved_neutral6": {
+			"name": "empty"
+		},
+		"preserved_neutral7": {
+			"name": "empty"
+		},
+		"preserved_neutral8": {
+			"name": "empty"
+		},
+		"preserved_neutral9": {
+			"name": "empty"
+		},
+		"preserved_neutral10": {
+			"name": "empty"
+		}
+	},
+	"previously": {
+		"map": {
+			"clock_time": 103
+		},
+		"player": {
+			"gold": 111,
+			"gold_reliable": 48,
+			"gold_from_income": 156,
+			"gpm": 346
+		},
+		"hero": {
+			"respawn_seconds": 12
+		},
+		"items": {
+			"slot2": {
+				"name": "empty"
+			},
+			"slot3": {
+				"name": "empty"
+			},
+			"slot4": {
+				"name": "empty"
+			},
+			"stash0": {
+				"name": "item_branches",
+				"purchaser": 0,
+				"item_level": 1,
+				"can_cast": true,
+				"cooldown": 0,
+				"max_cooldown": 0,
+				"passive": false
+			},
+			"stash1": {
+				"name": "item_branches",
+				"purchaser": 0,
+				"item_level": 1,
+				"can_cast": true,
+				"cooldown": 0,
+				"max_cooldown": 0,
+				"passive": false
+			},
+			"stash2": {
+				"name": "item_recipe_magic_wand",
+				"purchaser": 0,
+				"item_level": 1,
+				"can_cast": true,
+				"cooldown": 0,
+				"max_cooldown": 0,
+				"passive": false
+			}
+		}
+	},
+	"added": {
+		"items": {
+			"slot2": {
+				"purchaser": true,
+				"item_level": true,
+				"can_cast": true,
+				"cooldown": true,
+				"max_cooldown": true,
+				"passive": true
+			},
+			"slot3": {
+				"purchaser": true,
+				"item_level": true,
+				"can_cast": true,
+				"cooldown": true,
+				"max_cooldown": true,
+				"passive": true
+			},
+			"slot4": {
+				"purchaser": true,
+				"item_level": true,
+				"can_cast": true,
+				"cooldown": true,
+				"max_cooldown": true,
+				"passive": true
+			}
+		}
+	}
+}

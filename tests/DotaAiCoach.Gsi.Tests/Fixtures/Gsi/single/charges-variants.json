@@ -1,0 +1,19 @@
+{
+  "provider": { "name": "Dota 2", "appid": 570, "version": 47, "timestamp": 1700000050 },
+  "items": {
+    "slot0": { "name": "item_magic_wand", "charges": 6 },
+    "slot1": { "name": "item_bottle", "item_charges": 3 },
+    "slot2": { "name": "item_hand_of_midas", "ability_charges": 1 },
+    "slot3": { "name": "item_boots" },
+    "slot4": { "name": "empty" },
+    "slot5": { "name": "empty" },
+    "stash0": { "name": "empty" },
+    "stash1": { "name": "empty" },
+    "stash2": { "name": "empty" },
+    "stash3": { "name": "empty" },
+    "stash4": { "name": "empty" },
+    "stash5": { "name": "empty" },
+    "teleport0": { "name": "empty" },
+    "neutral0": { "name": "empty" }
+  }
+}

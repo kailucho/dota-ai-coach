@@ -1,0 +1,5 @@
+{
+  "provider": { "name": "Dota 2", "appid": 570, "version": 47, "timestamp": 1700500000 },
+  "map": { "clock_time": 900, "game_state": "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS" },
+  "player": { "gold": 2200 }
+}

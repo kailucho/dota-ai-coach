@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotaAiCoach.Domain\DotaAiCoach.Domain.csproj" />
+    <ProjectReference Include="..\DotaAiCoach.RecommendationEngines\DotaAiCoach.RecommendationEngines.csproj" />
+    <ProjectReference Include="..\DotaAiCoach.Host\DotaAiCoach.Host.csproj" />
+    <ProjectReference Include="..\DotaAiCoach.PlayerProfile\DotaAiCoach.PlayerProfile.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!--
+      Overrides Directory.Build.props's InvariantGlobalization=true:
+      WPF's text/font layout engine (MS.Internal.FontCache.MajorLanguages)
+      requires real culture data to render any text at all and throws a
+      CultureNotFoundException at startup under invariant globalization
+      mode. That setting is appropriate for the headless backend
+      projects but not for this WPF UI.
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Host (via Gsi) hosts an ASP.NET Core Kestrel listener in-process,
+      so this executable needs the ASP.NET Core shared framework at
+      runtime even though it's a WPF app. Without this, ASP.NET Core
+      types (including transitive ones like
+      Microsoft.Extensions.Logging.Abstractions) fail to load at runtime
+      with a FileNotFoundException, even though the build itself succeeds.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+</Project>

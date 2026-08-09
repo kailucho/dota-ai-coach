@@ -1,0 +1,16 @@
+{
+  "provider": {
+    "name": "Dota 2",
+    "appid": 570,
+    "version": 47,
+    "timestamp": 1700000010
+  },
+  "player": {
+    "kills": 5,
+    "deaths": 1,
+    "assists": 3,
+    "gold": 1920,
+    "gpm": 515,
+    "xpm": 604
+  }
+}

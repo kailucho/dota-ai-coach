@@ -1,0 +1,69 @@
+{
+  "provider": {
+    "name": "Dota 2",
+    "appid": 570,
+    "version": 47,
+    "timestamp": 1700000000
+  },
+  "map": {
+    "matchid": "7654321098",
+    "game_time": 1250,
+    "clock_time": 720,
+    "daytime": true,
+    "game_state": "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS",
+    "paused": false,
+    "radiant_score": 8,
+    "dire_score": 5
+  },
+  "player": {
+    "steamid": "76561197960287930",
+    "name": "TestPlayer",
+    "team_name": "radiant",
+    "kills": 4,
+    "deaths": 1,
+    "assists": 3,
+    "last_hits": 62,
+    "denies": 5,
+    "gold": 1850,
+    "gold_reliable": 400,
+    "gold_unreliable": 1450,
+    "gpm": 512,
+    "xpm": 601,
+    "net_worth": 5200
+  },
+  "hero": {
+    "id": 6,
+    "name": "npc_dota_hero_juggernaut",
+    "level": 10,
+    "xp": 4200,
+    "alive": true,
+    "buyback_cost": 400,
+    "buyback_cooldown": 0,
+    "health": 720,
+    "max_health": 900,
+    "mana": 220,
+    "max_mana": 330
+  },
+  "items": {
+    "slot0": { "name": "item_power_treads", "purchaser": 0 },
+    "slot1": { "name": "item_magic_wand", "purchaser": 0, "item_charges": 8 },
+    "slot2": { "name": "empty" },
+    "slot3": { "name": "empty" },
+    "slot4": { "name": "empty" },
+    "slot5": { "name": "empty" },
+    "stash0": { "name": "empty" },
+    "stash1": { "name": "empty" },
+    "stash2": { "name": "empty" },
+    "stash3": { "name": "empty" },
+    "stash4": { "name": "empty" },
+    "stash5": { "name": "empty" },
+    "teleport0": { "name": "item_tpscroll", "purchaser": 0 },
+    "neutral0": { "name": "empty" }
+  },
+  "abilities": {
+    "ability0": { "name": "juggernaut_blade_fury", "level": 4, "can_cast": true, "cooldown": 0, "ultimate": false },
+    "ability1": { "name": "juggernaut_healing_ward", "level": 2, "can_cast": true, "cooldown": 0, "ultimate": false },
+    "ability2": { "name": "juggernaut_blade_dance", "level": 3, "can_cast": true, "passive": true, "ultimate": false },
+    "ability3": { "name": "juggernaut_omni_slash", "level": 1, "can_cast": true, "cooldown": 45, "ultimate": true }
+  }
+}

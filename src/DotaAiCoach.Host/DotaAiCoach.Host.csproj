@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!--
+      PrivateAssets="compile" on these references is what makes the
+      "UiOverlay must not see Gsi wire types" rule real rather than just
+      a coding convention: without it, .NET's default transitive
+      compilation would put DotaAiCoach.Gsi's public types on
+      UiOverlay's compile-time surface even though UiOverlay never adds
+      a ProjectReference to Gsi itself. Host is the intended firewall
+      (see ICoachSession/CoachSessionFactory) — this setting is what
+      makes that firewall airtight, and what DotaAiCoach.Architecture.Tests
+      can then verify mechanically via assembly reference inspection.
+
+      Deliberately "compile", not "all": "all" also suppresses runtime
+      asset propagation (the actual DLLs copied to the final output),
+      which broke `dotnet run` for UiOverlay with a FileNotFoundException
+      on Microsoft.Extensions.Logging.Abstractions.dll (a transitive
+      dependency pulled in via Gsi's ASP.NET Core FrameworkReference).
+      "compile" keeps the compile-time type-visibility firewall while
+      still letting the runtime assemblies flow through to the final app.
+    -->
+    <ProjectReference Include="..\DotaAiCoach.Gsi\DotaAiCoach.Gsi.csproj" PrivateAssets="compile" />
+    <ProjectReference Include="..\DotaAiCoach.Domain\DotaAiCoach.Domain.csproj" />
+    <ProjectReference Include="..\DotaAiCoach.FeatureEngine\DotaAiCoach.FeatureEngine.csproj" PrivateAssets="compile" />
+    <ProjectReference Include="..\DotaAiCoach.RecommendationEngines\DotaAiCoach.RecommendationEngines.csproj" PrivateAssets="compile" />
+
+    <!--
+      Same firewall pattern as Gsi above, applied to the Fase 2 player
+      profile pipeline: OpenDota's HTTP/cache/rate-limiter details must
+      never be compile-time visible to UiOverlay, only the
+      DotaAiCoach.PlayerProfile domain/scoring types it exposes through
+      IProfileSession. See docs/adr/0012.
+    -->
+    <ProjectReference Include="..\DotaAiCoach.OpenDota\DotaAiCoach.OpenDota.csproj" PrivateAssets="compile" />
+    <ProjectReference Include="..\DotaAiCoach.PlayerProfile\DotaAiCoach.PlayerProfile.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
