@@ -16,7 +16,13 @@ public sealed class OpenDotaHttpClient : IOpenDotaClient, IDisposable
         _http = new HttpClient { Timeout = options.RequestTimeout };
     }
 
-    public async Task<OpenDotaResponse> GetAsync(string relativePath, CancellationToken ct)
+    public Task<OpenDotaResponse> GetAsync(string relativePath, CancellationToken ct) =>
+        SendAsync(relativePath, HttpMethod.Get, ct);
+
+    public Task<OpenDotaResponse> PostAsync(string relativePath, CancellationToken ct) =>
+        SendAsync(relativePath, HttpMethod.Post, ct);
+
+    private async Task<OpenDotaResponse> SendAsync(string relativePath, HttpMethod method, CancellationToken ct)
     {
         await _rateLimiter.WaitForSlotAsync(ct).ConfigureAwait(false);
 
@@ -25,7 +31,8 @@ public sealed class OpenDotaHttpClient : IOpenDotaClient, IDisposable
         HttpResponseMessage response;
         try
         {
-            response = await _http.GetAsync(url, ct).ConfigureAwait(false);
+            using var request = new HttpRequestMessage(method, url);
+            response = await _http.SendAsync(request, ct).ConfigureAwait(false);
         }
         catch (HttpRequestException)
         {

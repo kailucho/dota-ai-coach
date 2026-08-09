@@ -9,6 +9,9 @@ namespace DotaAiCoach.OpenDota;
 public interface IOpenDotaClient
 {
     Task<OpenDotaResponse> GetAsync(string relativePath, CancellationToken ct);
+
+    /// <summary>POST with an empty body — used only for /request/{match_id} (triggering a parse job). Still rate-limited like any other call.</summary>
+    Task<OpenDotaResponse> PostAsync(string relativePath, CancellationToken ct);
 }
 
 public sealed record OpenDotaResponse

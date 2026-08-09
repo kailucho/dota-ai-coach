@@ -47,6 +47,19 @@ public class ProfileFairPlayTests
     }
 
     [Fact]
+    public void ParsedMatchDetail_is_not_reachable_from_LiveFeatureSet_because_it_only_feeds_DotaDnaProfile_not_live_recommendations()
+    {
+        // ParsedMatchDetail (docs/adr/0016) is the same PublicPreflight/
+        // ExternalApi OpenDota data as the rest of Fase 2, just richer —
+        // it flows into DotaDnaBuilder.Build and the resulting scores end
+        // up on PlayerProfileSnapshot.Dna, never on LiveFeatureSet.
+        var visited = new HashSet<Type>();
+        Walk(typeof(LiveFeatureSet), visited);
+
+        visited.Should().NotContain(typeof(PlayerProfile.Model.ParsedMatchDetail));
+    }
+
+    [Fact]
     public void Every_classified_type_in_PlayerProfile_documents_visibility_and_justification()
     {
         var types = typeof(PlayerProfileSnapshot).Assembly.GetExportedTypes()

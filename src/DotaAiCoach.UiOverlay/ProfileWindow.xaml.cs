@@ -34,4 +34,9 @@ public partial class ProfileWindow : Window
     {
         await _viewModel.RefreshAsync();
     }
+
+    private async void OnDeepDnaRefreshClick(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.RequestDeepDnaRefreshAsync();
+    }
 }

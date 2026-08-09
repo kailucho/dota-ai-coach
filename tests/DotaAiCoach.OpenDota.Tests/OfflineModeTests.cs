@@ -17,6 +17,9 @@ public class OfflineModeTests
     {
         public Task<OpenDotaResponse> GetAsync(string relativePath, CancellationToken ct) =>
             throw new InvalidOperationException("OfflineOnly must never call the inner client.");
+
+        public Task<OpenDotaResponse> PostAsync(string relativePath, CancellationToken ct) =>
+            throw new InvalidOperationException("OfflineOnly must never call the inner client.");
     }
 
     [Fact]

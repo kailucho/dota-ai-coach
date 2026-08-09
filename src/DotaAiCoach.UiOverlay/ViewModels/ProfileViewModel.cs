@@ -38,6 +38,8 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
     public string RankText { get; private set; } = "-";
     public string RecordText { get; private set; } = "-";
     public bool IsRefreshing { get; private set; }
+    public bool IsDeepRefreshing { get; private set; }
+    public string DeepRefreshStatusText { get; private set; } = "";
     public ObservableCollection<HeroComfortScoreDisplay> HeroComfortScores { get; }
     public ObservableCollection<DnaDimensionDisplay> DnaDimensions { get; }
 
@@ -49,6 +51,31 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
         var snapshot = await _session.RefreshAsync(SteamIdInput, CancellationToken.None);
 
         IsRefreshing = false;
+        Apply(snapshot);
+    }
+
+    /// <summary>
+    /// Parses up to 20 of the player's most recent ranked matches to
+    /// unlock the six parsed-data DNA dimensions — expensive, so only ever
+    /// runs when the user explicitly clicks the Deep DNA Refresh button
+    /// (see docs/adr/0016), never automatically.
+    /// </summary>
+    public async Task RequestDeepDnaRefreshAsync()
+    {
+        IsDeepRefreshing = true;
+        DeepRefreshStatusText = "Starting…";
+        RaiseAllPropertiesChanged();
+
+        var progress = new Progress<DeepDnaRefreshProgress>(p =>
+        {
+            DeepRefreshStatusText = $"Parsing match {p.Completed}/{p.Total}…";
+            RaiseAllPropertiesChanged();
+        });
+
+        var snapshot = await _session.RequestDeepDnaRefreshAsync(SteamIdInput, maxMatches: 20, progress, CancellationToken.None);
+
+        IsDeepRefreshing = false;
+        DeepRefreshStatusText = "";
         Apply(snapshot);
     }
 

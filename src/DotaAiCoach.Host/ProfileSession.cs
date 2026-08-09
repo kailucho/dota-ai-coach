@@ -7,16 +7,19 @@ namespace DotaAiCoach.Host;
 internal sealed class ProfileSession : IProfileSession
 {
     private readonly PlayerProfileService _service;
+    private readonly IOpenDotaClient _rawClient;
     private readonly OpenDotaOptions _options;
 
     public PlayerProfileSnapshot Current { get; private set; } = PlayerProfileSnapshot.Empty;
     public bool IsRefreshing { get; private set; }
+    public bool IsDeepRefreshing { get; private set; }
 
     public event EventHandler<PlayerProfileSnapshot>? Updated;
 
-    public ProfileSession(PlayerProfileService service, OpenDotaOptions options)
+    public ProfileSession(PlayerProfileService service, IOpenDotaClient rawClient, OpenDotaOptions options)
     {
         _service = service;
+        _rawClient = rawClient;
         _options = options;
     }
 
@@ -56,5 +59,31 @@ internal sealed class ProfileSession : IProfileSession
         Current = snapshot;
         Updated?.Invoke(this, snapshot);
         return snapshot;
+    }
+
+    public async Task<PlayerProfileSnapshot> RequestDeepDnaRefreshAsync(
+        string steamIdInput, int maxMatches, IProgress<DeepDnaRefreshProgress>? progress, CancellationToken ct)
+    {
+        if (!SteamId.TryParse(steamIdInput, out var id))
+        {
+            return Current;
+        }
+
+        IsDeepRefreshing = true;
+        try
+        {
+            var innerProgress = progress is null
+                ? null
+                : new Progress<ParseProgress>(p => progress.Report(new DeepDnaRefreshProgress(p.Completed, p.Total)));
+
+            var snapshot = await _service.RequestDeepDnaRefreshAsync(id, Current, _rawClient, maxMatches, innerProgress, ct).ConfigureAwait(false);
+            Current = snapshot;
+            Updated?.Invoke(this, snapshot);
+            return snapshot;
+        }
+        finally
+        {
+            IsDeepRefreshing = false;
+        }
     }
 }

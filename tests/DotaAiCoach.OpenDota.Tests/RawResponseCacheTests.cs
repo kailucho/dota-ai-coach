@@ -62,6 +62,9 @@ public class RawResponseCacheTests
     {
         public Task<OpenDotaResponse> GetAsync(string relativePath, CancellationToken ct) =>
             Task.FromResult(new OpenDotaResponse { RawJson = null, StatusCode = null, FetchedAtUtc = DateTimeOffset.UtcNow });
+
+        public Task<OpenDotaResponse> PostAsync(string relativePath, CancellationToken ct) =>
+            Task.FromResult(new OpenDotaResponse { RawJson = null, StatusCode = null, FetchedAtUtc = DateTimeOffset.UtcNow });
     }
 
     [Fact]

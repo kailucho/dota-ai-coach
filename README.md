@@ -68,6 +68,15 @@ OpenDota match history. Two things to know:
   a match — OpenDota indexes new matches shortly after they finish, not
   retroactively. Click Refresh again once indexed.
 
+A normal **Refresh** only computes Farm/Fighting/Survival/Late Game DNA
+dimensions from your match summaries. Click **Deep DNA Refresh** to also
+unlock Laning, Objectives, Vision, Itemization, Buyback Discipline, and
+Tempo — this parses up to 20 of your recent ranked matches on OpenDota,
+which is slower and uses noticeably more of OpenDota's rate limit than a
+normal refresh, so use it sparingly rather than on every session.
+Positioning has no reliable data source yet and stays unavailable either
+way.
+
 ## Running the replay simulator
 
 Drive the pipeline from fixture files instead of a live Dota client —

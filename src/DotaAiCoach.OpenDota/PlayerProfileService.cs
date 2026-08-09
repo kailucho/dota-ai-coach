@@ -77,4 +77,56 @@ public sealed class PlayerProfileService
 
         return snapshot with { Provenance = snapshot.Provenance with { ServedFromCache = playerResponse.ServedFromCache } };
     }
+
+    /// <summary>
+    /// Explicit, user-triggered deep refresh: parses up to maxMatches of
+    /// the player's most recent ranked matches (POST /request, polled,
+    /// then re-fetched), and rebuilds the Dota DNA profile with the
+    /// resulting ParsedMatchDetail records. Never called automatically —
+    /// see docs/adr/0016. Requires a preceding FetchAsync (or a cached
+    /// snapshot) to know which matches exist; pass its result in.
+    /// </summary>
+    public async Task<PlayerProfileSnapshot> RequestDeepDnaRefreshAsync(
+        SteamId id,
+        PlayerProfileSnapshot currentSnapshot,
+        IOpenDotaClient rawClient,
+        int maxMatches,
+        IProgress<ParseProgress>? progress,
+        CancellationToken ct)
+    {
+        if (currentSnapshot.Availability != ProfileAvailability.Available)
+        {
+            return currentSnapshot;
+        }
+
+        var matchIds = currentSnapshot.RecentMatches
+            .Where(m => !m.IsTurbo && m.MatchId is not null)
+            .OrderByDescending(m => m.StartTime)
+            .Take(maxMatches)
+            .Select(m => m.MatchId!.Value)
+            .ToArray();
+
+        var requester = new ParsedMatchRequester(rawClient, _client, _timeProvider);
+        await requester.ParseMatchesAsync(matchIds, progress, ct).ConfigureAwait(false);
+
+        var parsedMatches = new List<ParsedMatchDetail>();
+        foreach (var matchId in matchIds)
+        {
+            var rawJson = await _client.GetCachedParsedMatchAsync($"/matches/{matchId}", ct).ConfigureAwait(false);
+            var detail = OpenDotaProfileMapper.MapParsedMatch(matchId, rawJson, id.Steam32);
+            if (detail is not null)
+            {
+                parsedMatches.Add(detail);
+            }
+        }
+
+        var newDna = _dnaBuilder.Build(
+            currentSnapshot.Availability,
+            currentSnapshot.RecentMatches,
+            (currentSnapshot.RankedWins ?? 0) + (currentSnapshot.RankedLosses ?? 0),
+            currentSnapshot.RankedWins ?? 0,
+            parsedMatches);
+
+        return currentSnapshot with { Dna = newDna };
+    }
 }

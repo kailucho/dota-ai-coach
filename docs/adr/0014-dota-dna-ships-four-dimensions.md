@@ -2,7 +2,12 @@
 
 ## Status
 
-Accepted
+Accepted. **Partially superseded by `docs/adr/0016`**, which promotes six
+of the seven deferred dimensions (Laning, Objectives, Vision, Itemization,
+BuybackDiscipline, Tempo) to `Computed` using OpenDota's parsed match
+detail. Positioning remains deferred, per ADR-0016's updated reasoning.
+This document is left intact rather than rewritten, per the project's ADR
+convention of accretive records.
 
 ## Context
 

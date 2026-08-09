@@ -43,11 +43,22 @@ public sealed class RawResponseCache
         }
     }
 
-    public async Task WriteAsync(string endpoint, string body, int? statusCode, CancellationToken ct)
+    public Task WriteAsync(string endpoint, string body, int? statusCode, CancellationToken ct) =>
+        WriteAsync(endpoint, body, statusCode, isParsed: false, ct);
+
+    /// <summary>
+    /// isParsed marks a match-detail response as OpenDota's post-parse
+    /// shape (see docs/adr/0016) — set explicitly by the caller, never
+    /// inferred by sniffing the JSON shape at read time, since shape-
+    /// sniffing heuristics drift as OpenDota's schema evolves. A parsed
+    /// match's content never changes once written, so callers may pass
+    /// TimeSpan.MaxValue as the effective TTL when reading it back.
+    /// </summary>
+    public async Task WriteAsync(string endpoint, string body, int? statusCode, bool isParsed, CancellationToken ct)
     {
         Directory.CreateDirectory(_directory);
 
-        var entry = new CachedEntry(endpoint, _timeProvider.GetUtcNow(), statusCode, "opendota", 1, body);
+        var entry = new CachedEntry(endpoint, _timeProvider.GetUtcNow(), statusCode, "opendota", 1, body, isParsed);
         var json = JsonSerializer.Serialize(entry);
 
         var path = PathFor(endpoint);
@@ -69,5 +80,6 @@ public sealed class RawResponseCache
         [property: JsonPropertyName("statusCode")] int? StatusCode,
         [property: JsonPropertyName("sourceName")] string SourceName,
         [property: JsonPropertyName("schemaVersion")] int SchemaVersion,
-        [property: JsonPropertyName("body")] string Body);
+        [property: JsonPropertyName("body")] string Body,
+        [property: JsonPropertyName("isParsed")] bool IsParsed = false);
 }

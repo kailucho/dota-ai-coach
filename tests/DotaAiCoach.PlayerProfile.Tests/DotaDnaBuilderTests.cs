@@ -33,8 +33,13 @@ public class DotaDnaBuilderTests
     }
 
     [Fact]
-    public void Vision_positioning_itemization_and_buyback_are_marked_requiring_parsed_matches_not_scored_zero()
+    public void Vision_positioning_itemization_and_buyback_are_never_scored_zero_when_no_parsed_matches_are_available()
     {
+        // Vision/Itemization/BuybackDiscipline require ParsedMatchDetail
+        // (see DotaDnaBuilderParsedMatchTests) — without it they report
+        // InsufficientData, same as any other under-sampled dimension,
+        // never a fabricated score. Positioning stays deferred regardless
+        // (see docs/adr/0016).
         var builder = new DotaDnaBuilder();
         var matches = Enumerable.Range(0, 10).Select(_ => Match(500, 500, 5, 5, 10000, 2, 1800, true)).ToArray();
 
@@ -46,10 +51,10 @@ public class DotaDnaBuilderTests
         var positioning = profile.Dimensions.Single(d => d.Dimension == DotaDnaDimension.Positioning);
 
         vision.Score.Should().BeNull();
-        vision.Availability.Should().Be(DnaAvailability.RequiresParsedMatches);
-        itemization.Availability.Should().Be(DnaAvailability.RequiresParsedMatches);
-        buyback.Availability.Should().Be(DnaAvailability.RequiresParsedMatches);
-        positioning.Availability.Should().Be(DnaAvailability.RequiresReplay);
+        vision.Availability.Should().Be(DnaAvailability.InsufficientData);
+        itemization.Availability.Should().Be(DnaAvailability.InsufficientData);
+        buyback.Availability.Should().Be(DnaAvailability.InsufficientData);
+        positioning.Availability.Should().Be(DnaAvailability.NotYetImplemented);
     }
 
     [Fact]

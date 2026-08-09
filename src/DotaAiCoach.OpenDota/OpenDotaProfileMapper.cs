@@ -25,7 +25,8 @@ public static class OpenDotaProfileMapper
         RawFetchResult? heroesResult,
         HeroComfortScorer comfortScorer,
         DotaDnaBuilder dnaBuilder,
-        DateTimeOffset fetchedAtUtc)
+        DateTimeOffset fetchedAtUtc,
+        IReadOnlyList<ParsedMatchDetail>? parsedMatches = null)
     {
         if (playerResult.StatusCode == 404)
         {
@@ -92,7 +93,7 @@ public static class OpenDotaProfileMapper
                 dedupedMatches.Where(m => m.HeroId == stats.HeroId).ToArray()))
             .ToArray();
 
-        var dna = dnaBuilder.Build(ProfileAvailability.Available, dedupedMatches, overallGames, wins);
+        var dna = dnaBuilder.Build(ProfileAvailability.Available, dedupedMatches, overallGames, wins, parsedMatches);
 
         return new PlayerProfileSnapshot
         {
@@ -162,6 +163,47 @@ public static class OpenDotaProfileMapper
             AverageRank = dto.AverageRank,
             PartySize = dto.PartySize,
             LeaverStatus = dto.LeaverStatus,
+        };
+    }
+
+    /// <summary>
+    /// Maps a parsed /matches/{id} response to the requesting player's
+    /// ParsedMatchDetail, matched by account_id (falling back to
+    /// player_slot if account_id is hidden/anonymous). Returns null if the
+    /// player isn't found in the response or the JSON isn't parseable.
+    /// </summary>
+    public static ParsedMatchDetail? MapParsedMatch(long matchId, string? rawJson, long requestingAccountId32)
+    {
+        OpenDotaParsedMatchDto? parsed;
+        try
+        {
+            parsed = Deserialize<OpenDotaParsedMatchDto>(rawJson);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+
+        var player = parsed?.Players?.FirstOrDefault(p => p.AccountId == requestingAccountId32);
+        if (player is null)
+        {
+            return null;
+        }
+
+        return new ParsedMatchDetail
+        {
+            MatchId = matchId,
+            HeroId = player.HeroId,
+            PurchaseTimesSeconds = player.PurchaseLog?.Where(p => p.Time is not null).Select(p => p.Time!.Value).ToArray() ?? Array.Empty<int>(),
+            BuybackTimesSeconds = player.BuybackLog?.Where(b => b.Time is not null).Select(b => b.Time!.Value).ToArray() ?? Array.Empty<int>(),
+            ObsPlaced = player.ObsPlaced,
+            SenPlaced = player.SenPlaced,
+            LaneEfficiencyPct = player.LaneEfficiencyPct,
+            LaneKills = player.LaneKills,
+            TowerKills = player.TowerKills,
+            RoshanKills = player.RoshanKills ?? player.RoshansKilled,
+            GoldTimeSeries = (IReadOnlyList<int>?)player.GoldTimeSeries ?? Array.Empty<int>(),
+            XpTimeSeries = (IReadOnlyList<int>?)player.XpTimeSeries ?? Array.Empty<int>(),
         };
     }
 

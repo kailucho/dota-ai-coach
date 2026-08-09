@@ -19,6 +19,11 @@ public static class ProfileSessionFactory
         var cachingClient = new CachingOpenDotaClient(httpClient, cache, offlineOnly: options.OfflineOnly);
         var service = new PlayerProfileService(cachingClient, options);
 
-        return new ProfileSession(service, options);
+        // httpClient is also passed as the raw IOpenDotaClient for the
+        // Deep DNA Refresh's parse-request flow (POST /request, poll GET
+        // /request/{jobId}) — these calls are deliberately never routed
+        // through the caching decorator, since a parse trigger only makes
+        // sense as a live call (see CachingOpenDotaClient.PostAsync).
+        return new ProfileSession(service, httpClient, options);
     }
 }

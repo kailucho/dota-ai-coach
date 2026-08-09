@@ -100,6 +100,13 @@ data into a live or draft-time recommendation without a classification
 change — only a deliberate decision to make that type reachable, which
 would then need the same review this document already calls for.
 
+`ParsedMatchDetail` (per `docs/adr/0016`, six additional Dota DNA
+dimensions unlocked via OpenDota's parsed match detail) is the same
+`PublicPreflight`/`ExternalApi` OpenDota data, just richer — it flows only
+into `DotaDnaProfile`, never `LiveFeatureSet`, and
+`ProfileFairPlayTests.ParsedMatchDetail_is_not_reachable_from_LiveFeatureSet_...`
+enforces the same guarantee for it specifically.
+
 ## What's still deferred
 
 Computer Vision (`VisibleScreen`) and postgame replay analysis

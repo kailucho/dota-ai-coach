@@ -38,6 +38,16 @@
                 <Run Text="Rank tier: " /><Run Text="{Binding RankText, Mode=OneWay}" />
                 <Run Text="  Record: " /><Run Text="{Binding RecordText, Mode=OneWay}" />
             </TextBlock>
+
+            <Grid Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="Deep DNA Refresh" Padding="8,3" Click="OnDeepDnaRefreshClick"
+                        ToolTip="Parses up to 20 of your most recent ranked matches on OpenDota to unlock Laning, Objectives, Vision, Itemization, Buyback Discipline and Tempo. Slower and uses more of OpenDota's rate limit than a normal Refresh — use sparingly." />
+                <TextBlock Grid.Column="1" Text="{Binding DeepRefreshStatusText, Mode=OneWay}" Foreground="#FF888888" FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center" />
+            </Grid>
         </StackPanel>
 
         <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">

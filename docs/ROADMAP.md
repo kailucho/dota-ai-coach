@@ -92,7 +92,15 @@ Per the user's explicit scope for this iteration:
 - [x] Dota DNA v1: 4 of 11 dimensions actually computed (Farm, Fighting,
       Survival, Late Game), the other 7 explicitly marked with a truthful
       unavailability reason rather than a fabricated score
-      (`docs/adr/0014`).
+      (`docs/adr/0014`). **Extended same-phase**: 6 more dimensions
+      (Laning, Objectives, Vision, Itemization, BuybackDiscipline, Tempo)
+      unlocked via an explicit, user-triggered "Deep DNA Refresh" that
+      parses up to 20 recent matches on OpenDota — 10 of 11 dimensions now
+      computed; only Positioning stays deferred, since parsed data there
+      is heatmap-shaped and judged insufficient for an honest score
+      (`docs/adr/0016`). Verified live: the Deep DNA Refresh button was
+      exercised against the user's real account and produced 20 cached
+      parsed matches and real scores across 10 dimensions.
 - [x] Profile shown in a separate WPF window (not overlay navigation),
       offline-first (loads from cache on open, never auto-fetches).
 - [x] Private/missing OpenDota profiles handled as a first-class state
@@ -106,31 +114,28 @@ Per the user's explicit scope for this iteration:
       (`ProfileFairPlayTests`) asserts no `PlayerProfile` type is
       reachable from `LiveFeatureSet`, enforcing the "profile does not
       feed live recommendations yet" scope decision at build time.
-- [x] `dotnet build`/`dotnet test` green across all 8 projects (169 tests
-      total after this phase).
+- [x] `dotnet build`/`dotnet test` green across all 8 projects (189 tests
+      total after this phase, including the parsed-match extension).
 
 **Known gap carried forward**: `MatchupFamiliarity` (a Hero Comfort Score
 component) is modeled but left `null` — OpenDota's `/heroes` endpoint only
 exposes matchup data at the player level, not per played-hero, and a
 future phase should find a proper per-hero data source rather than
-approximate it (see `docs/adr/0015`). `Tempo` (a DNA dimension) is
-similarly left `NotYetImplemented` for the same reason (see
-`docs/adr/0014`).
+approximate it (see `docs/adr/0015`). `Positioning` (a DNA dimension) is
+left `NotYetImplemented` — parsed match data exists (`lane_pos`/
+`position_est`) but is heatmap-shaped, not a real trajectory signal (see
+`docs/adr/0016`).
 
 ## Recommended next phase
 
-1. **Capture real OpenDota parsed-match fixtures** to unlock the 7
-   deferred Dota DNA dimensions (Laning, Objectives, Vision, Itemization,
-   Buyback Discipline need `POST /request/{match_id}` parsed data;
-   Positioning needs raw replay parsing) — the natural continuation of
-   Fase 2, not a new phase.
-2. **Fase 3 — ML offline baselines**: this is also when the JSON RAW cache
-   built for Fase 2 should feed into `dota-data`'s full
-   RAW→BRONZE→NORMALIZED→FEATURES→DATASET pipeline (DuckDB/Parquet),
-   superseding the "SQLite deferred" note in `docs/adr/0011`.
+**Fase 3 — ML offline baselines**: this is when the JSON RAW cache built
+for Fase 2 (including the parsed-match cache added in this extension)
+should feed into `dota-data`'s full
+RAW→BRONZE→NORMALIZED→FEATURES→DATASET pipeline (DuckDB/Parquet),
+superseding the "SQLite deferred" note in `docs/adr/0011`.
 
 Do **not** skip ahead to Computer Vision or advanced personalization
-before these — per `docs/MASTER_PLAN.md`'s explicit sequencing and
+before this — per `docs/MASTER_PLAN.md`'s explicit sequencing and
 `dota-ml`'s baseline-first principle.
 
 ## Deferred phases (from `docs/MASTER_PLAN.md`, unchanged)
