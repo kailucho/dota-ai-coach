@@ -231,18 +231,71 @@ needs more training data, richer features, or both (see
 `docs/MASTER_PLAN.md`'s fuller Draft Coach representation for what those
 richer features would look like).
 
+## Fase 3 (scoped) — Item Recommendation ranker — DELIVERED
+
+Third and final model of `docs/MASTER_PLAN.md`'s ML Baselines module, a
+ranking task (LightGBM LambdaMART), evaluated with NDCG/MRR rather than
+AUC. Full detail in `docs/adr/0020`.
+
+- [x] Two real data-quality bugs found and fixed before training: (1) a
+      hand-blacklist of "meaningful items" let ~350k noise rows through
+      (cheap components like `ogre_axe`/`gauntlets` dominating by raw
+      frequency); replaced with a data-driven whitelist from OpenDota's
+      own `/constants/items` `qual` field (129 real equipment-tier items).
+      (2) ~2.3% of rows were repurchases of an already-owned item,
+      structurally unscoreable against a candidate pool that excludes
+      owned items; filtered at extraction time.
+- [x] Two baselines per `dota-ml`'s progression: global item popularity
+      ("rule" tier) and per-hero Bayesian-shrunk popularity
+      (frequency-conditioned tier) — hero-conditioning alone more than
+      doubled NDCG@3 (0.191 → 0.409), confirming item choice is strongly
+      hero-dependent.
+- [x] **LightGBM LambdaMART ranker beat both baselines decisively**: test
+      NDCG@3 **0.544**, NDCG@5 **0.587**, MRR **0.557** (touched once).
+      This is the strongest of the three Fase 3 models — unlike the draft
+      baseline's weak signal, item choice given (hero, minute, items
+      owned) is genuinely learnable at this dataset's scale.
+- [x] Segmented by minute bucket: early-game NDCG@3 0.715 (most
+      standardized builds), late-game 0.351 (most situational) — expected
+      pattern, confirmed rather than assumed.
+- [x] Domain sanity check: ranker agrees with the per-hero baseline's
+      top pick 47.5% of the time, vastly above the 0.9% chance rate.
+- [x] Zero `POSTGAME_ONLY` features — unlike the win-probability model,
+      every feature here is legitimately live-knowable.
+- [x] A real performance bug found and fixed: the initial NDCG/MRR
+      implementation called sklearn's `ndcg_score` in a per-query Python
+      loop and effectively hung on ~9M candidate rows; rewritten as a
+      vectorized closed-form computation (valid for this task's
+      single-relevant-document-per-query structure), cutting evaluation
+      time from an unbounded hang to ~1.5s per 2M rows.
+- [x] 49 automated tests total (6 new for this model) — all green.
+
+**Known limitation**: the candidate pool is not gold-affordability-filtered
+in this v1.0 (would need a new join with the win-probability model's
+minute-indexed gold data) — so test NDCG numbers are a lower bound
+relative to a filtered v1.1. `Expected Win Uplift(item|state)`
+(MASTER_PLAN's stretch goal) is explicitly deferred: computing it naively
+would be exactly the survivor-bias trap the module's own Divine Rapier
+example warns against.
+
+## Fase 3 — ML Baselines module — COMPLETE
+
+All three baselines `docs/MASTER_PLAN.md`'s ML Baselines module calls for
+now exist, each honestly evaluated: Win Probability (AUC 0.839, strong),
+Item Recommendation (NDCG@3 0.544, strong), Draft (AUC 0.531, weak — a
+real, reported finding, not a shortfall to hide). See `docs/adr/0017`
+through `0020` for full detail on each.
+
 ## Recommended next phase
 
-**Fase 3 remainder**: item recommendation ranker (the third model in
-`docs/MASTER_PLAN.md`'s ML baselines module — a ranking task, not binary
-classification, so it needs a different evaluation approach than the two
-models built so far), and eventually a genuinely production-scale
-RAW→BRONZE→NORMALIZED→FEATURES→DATASET rebuild (the ~1863-match dataset
-built here becomes a seed, not a discard, for that rebuild) before ONNX
-export and live wiring are considered for any of these three models.
+A genuinely production-scale RAW→BRONZE→NORMALIZED→FEATURES→DATASET
+rebuild (the ~1863-match dataset built across all three Fase 3 models
+becomes a seed, not a discard, for that rebuild) is the natural next step
+before ONNX export and live wiring are considered for any of these three
+models.
 
 Do **not** skip ahead to Computer Vision or advanced personalization
-before these — per `docs/MASTER_PLAN.md`'s explicit sequencing and
+before this — per `docs/MASTER_PLAN.md`'s explicit sequencing and
 `dota-ml`'s baseline-first principle.
 
 ## Deferred phases (from `docs/MASTER_PLAN.md`, unchanged)

@@ -1,0 +1,64 @@
+{
+  "baselines": {
+    "global_popularity_unconditional_rule": {
+      "ndcg@3": 0.19059479344417266,
+      "ndcg@5": 0.23070204874750816,
+      "mrr": 0.23586381621360814,
+      "n_queries": 21099,
+      "n_queries_with_relevant_candidate": 21099
+    },
+    "hero_popularity_bayesian_shrunk": {
+      "ndcg@3": 0.408510321878326,
+      "ndcg@5": 0.45988882248507984,
+      "mrr": 0.4352219654160751,
+      "n_queries": 21099,
+      "n_queries_with_relevant_candidate": 21099
+    }
+  },
+  "model": {
+    "lightgbm_lambdamart": {
+      "ndcg@3": 0.549791961886993,
+      "ndcg@5": 0.5939956217531998,
+      "mrr": 0.5616480807309346,
+      "n_queries": 21099,
+      "n_queries_with_relevant_candidate": 21099
+    }
+  },
+  "test_metrics_touched_once": {
+    "ndcg@3": 0.543835570850541,
+    "ndcg@5": 0.5868088656148648,
+    "mrr": 0.5566304028935235,
+    "n_queries": 20760,
+    "n_queries_with_relevant_candidate": 20760
+  },
+  "segments_by_minute_bucket": {
+    "early": {
+      "ndcg@3": 0.7153259399183747,
+      "ndcg@5": 0.748351286775637,
+      "mrr": 0.7074778458844446,
+      "n_queries": 8654,
+      "n_queries_with_relevant_candidate": 8654
+    },
+    "mid": {
+      "ndcg@3": 0.4662808968452741,
+      "ndcg@5": 0.5167117813509037,
+      "mrr": 0.49050899849179896,
+      "n_queries": 7388,
+      "n_queries_with_relevant_candidate": 7388
+    },
+    "late": {
+      "ndcg@3": 0.3507232939615795,
+      "ndcg@5": 0.40026565786090584,
+      "mrr": 0.383478890404441,
+      "n_queries": 4718,
+      "n_queries_with_relevant_candidate": 4718
+    }
+  },
+  "domain_sanity_check": {
+    "ranker_vs_baseline1_top1_agreement_rate": 0.47538535645472063,
+    "chance_rate": 0.008771929824561403,
+    "passed": true
+  },
+  "n_unique_items": 114,
+  "candidate_pool_note": "v1.0 candidate pool = all meaningful items minus items_owned_before, NOT gold-affordability-filtered -- see docs/adr/0020 Consequences."
+}
