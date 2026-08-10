@@ -288,6 +288,21 @@ through `0020` for full detail on each.
 
 ## Recommended next phase
 
+> **Note (2026-08-10): this section is stale.** Everything it
+> recommends — the multi-patch RAW→BRONZE→NORMALIZED→FEATURES→DATASET
+> rebuild, ONNX export, and live wiring of all three ML models into the
+> overlay — was actually completed in sessions between this document's
+> last commit (`8bae0b1`) and today. This file was accidentally
+> overwritten mid-session (a `Write` call replaced the whole document
+> instead of appending), and the sections that documented that work are
+> not recoverable — they were never committed to git, so there is no
+> history to restore them from. Left as-is below rather than rewritten
+> from memory, since guessing at lost content risks introducing
+> inaccuracies into a document whose purpose is to be an accurate
+> record. The two dated sections at the end of this file (Ask LLM panel,
+> Item Ranker rank-tier retrain) are current and accurate — they were
+> written directly from this session's verified work, not reconstructed.
+
 A genuinely production-scale RAW→BRONZE→NORMALIZED→FEATURES→DATASET
 rebuild (the ~1863-match dataset built across all three Fase 3 models
 becomes a seed, not a discard, for that rebuild) is the natural next step
@@ -305,3 +320,172 @@ Fase 5 (Draft CV) · Fase 6 (Postgame) ·
 Fase 7 (Advanced personalization) · Fase 8 (Macro coach: objectives/
 Roshan/high ground/death cost) · Fase 9 (Advanced CV) · Fase 10
 (Refinement: ONNX optimization, installer, auto-updater, UX polish).
+
+## Added: manual "Ask LLM" panel (LLM-refinement path, not GSI-based)
+
+Given the `draft`-block closure above, the user's actual prior workflow
+for enemy-hero-aware recommendations was manual: screenshot their own
+scoreboard (which legitimately shows enemy heroes + KDA — visible on
+their own screen, `VISIBLE_SCREEN` per `dota-fairplay`, same basis as
+the deferred Fase 9 CV path) and paste a description into ChatGPT at
+specific match minutes. Rather than building full CV first, this phase
+ports that manual workflow directly into the app as a standalone,
+immediately-useful feature, and lays the groundwork to later use its
+output to refine the trained ML Item Ranker.
+
+**Provider: OpenAI** (not Claude) — chosen explicitly by the user, who
+had a reference implementation for the vision-extraction piece in a
+sibling project, `D:\KAI\proyectos\dota-plus-free`
+(`packages/server/src/routes/tickExtract.ts`): OpenAI Responses API +
+vision + a forced function-call with a strict JSON Schema. This
+project's implementation ports the same prompt/schema shape onto the
+official OpenAI .NET SDK's Chat Completions + Structured Outputs
+(`ChatResponseFormat.CreateJsonSchemaFormat`) — same guarantee (valid,
+schema-conformant JSON, no free text), different SDK surface. An earlier
+draft of this feature used Claude/Anthropic for the whole flow; it was
+replaced end-to-end (both the vision extraction and the build-
+recommendation text) once the user chose OpenAI as the single provider,
+to avoid needing two API keys.
+
+- [x] `DotaAiCoach.LlmCoach` project — OpenAI C# SDK client, two pieces:
+      - `OpenAiScoreboardExtractor` (`IScoreboardExtractor`) — vision +
+        Structured Outputs, extracts enemy hero level/KDA from a
+        player-captured scoreboard screenshot. Ports
+        `tickExtract.ts`'s prompt and schema shape
+        (`hero`/`level`/`kda.{k,d,a}`), restricted/normalized against an
+        optional expected-enemies hint, same as the reference project.
+      - `OpenAiSituationAdvisor` (`ISituationAdvisor`) — the final build
+        recommendation call, given the extracted scoreboard + typed own
+        hero/KDA.
+      Both wired through Host only (`ILlmCoachSession`/`LlmCoachSession`)
+      per the same UiOverlay-never-sees-infrastructure firewall as
+      OpenDota/MlInference (see the architecture test
+      `UiOverlay_references_no_LlmCoach_or_OpenAI_directly_or_transitively`).
+- [x] `ManualSituationInput`/`ScoreboardExtractionResult`/
+      `LlmSituationAdvice` domain types (`DotaAiCoach.Domain.LlmCoach`).
+      `EnemyScoreboard` (extracted, structured) replaced the original
+      free-text `EnemyKdaSummary` field — the player now uploads/drags a
+      screenshot instead of typing enemy KDA by hand, closer to their
+      actual prior manual workflow. Own hero/KDA stay as typed text
+      (trivially known, no need to screenshot). All fields are either
+      player-typed or extracted from a player-captured image of their
+      own screen — `fairPlayClassification: VISIBLE_SCREEN`, `source`:
+      manual player input / player-captured screenshot (not GSI/CV
+      automation), `availability`: any time during a live match,
+      `justification`: identical basis to the deferred CV path, just
+      without the always-on automated pixel-recognition step.
+- [x] `AskLlmWindow` — a separate window (mirrors `ProfileWindow`'s
+      precedent), reachable via a new "Ask LLM" button next to "Profile"
+      on the main overlay. Drag-and-drop or file-picker screenshot
+      upload, auto-extracts on selection (mirrors `TickForm.tsx`'s
+      auto-extract-on-drop UX), shows a live preview + extraction
+      summary before the player asks for a recommendation. Not part of
+      the live `ItemPlan`/message feed — user-triggered, no
+      `LiveMessageBudget` cooldown gating applies (`dota-live-coach`
+      governs the automatic live feed, not an explicit on-demand query).
+- [x] `SituationLogWriter` — appends every (input, LLM response) pair as
+      JSONL to `%LocalAppData%\DotaAiCoach\llm-situations\situations.jsonl`.
+      This is the durable dataset for the user's stated long-term goal
+      ("me gustaria que a futuro nuestro modelo ya este bien pulido") —
+      using accumulated LLM responses to eventually refine the trained
+      Item Ranker. No automatic training pipeline consumes this file yet;
+      that's future work once enough situations have accumulated.
+- [ ] **Not yet done**: an actual retraining step that consumes
+      `situations.jsonl` to refine the Item Ranker. Deliberately deferred
+      until there's enough logged data to be useful — revisit once the
+      user has used the panel across a meaningful number of real
+      matches/minutes.
+- [ ] **Not yet done**: `OPENAI_API_KEY` was not yet configured on the
+      user's machine as of this writing — `LlmCoachSession.IsAvailable`
+      degrades gracefully (panel shows "no API key configured" instead of
+      failing) until it is. End-to-end verification with a real API call
+      (both the vision extraction and the recommendation) is still
+      pending.
+
+## Item Ranker retrained with `avg_rank_tier` feature (2026-08-10)
+
+Closes the pending "retrain once bracket acquisition finishes" work
+queued earlier. The bracket-4-6 (Archon-Ancient) data acquisition
+process (`acquire_by_bracket.py`, target 3000 matches) stalled at
+2799/3000 (93%) on persistent OpenDota 429 rate-limit errors and the
+background process died without completing — confirmed via `ps aux`
+(no longer running) and the absence of a "bracket acquisition complete"
+log line. Per explicit user decision, proceeded with the partial data
+rather than restarting the acquisition.
+
+**Pipeline rebuilt end-to-end, each stage verified before the next:**
+
+1. `bronze.parquet` rebuilt from all of `data/raw/` (5674 well-formed
+   matches, up from the pre-bracket-run baseline) — `avg_rank_tier`
+   populated for 5669/5674 rows (range 12-75) via the existing sidecar.
+2. `normalized.parquet` rebuilt (5674 rows, 0 dropped).
+3. `item_events.parquet` rebuilt (207,326 (player, purchase) rows, 236
+   abandoned matches excluded). Verified the bracket-run's contribution
+   directly: 1202 of 1413 bracket-4-6 matches produced qualifying
+   purchase rows (the rest either had no meaningful purchases or were
+   abandons).
+4. New dataset `item-events-2780-20260810` built (train 1668 / val 417 /
+   calib 278 / test 417 matches). Verified bracket 4-6 coverage went
+   from 209 matches (the original scarcity problem) to **664 matches** —
+   a real improvement despite the acquisition stopping short.
+5. `avg_rank_tier` added as a 6th Item Ranker feature
+   (`tools/DotaAiCoach.Training/src/dota_training/models/item_ranker.py`):
+   joined from `bronze.parquet` by `match_id`, missing values filled with
+   the TRAIN split's median (71.0, computed fresh — not hardcoded — and
+   persisted in both `model.pkl` and `metadata.json` so C# can read the
+   same fallback the model was actually trained with, never an
+   arbitrary default).
+6. Retrained (`item-ranker-v1.0-20260810T203622Z`). **Metrics held, no
+   regression**: NDCG@3 (val) 0.5237 vs. the 0.524 baseline (~0.0003
+   difference, within noise); test NDCG@3 0.5234, MRR 0.5388 (touched
+   once). Domain sanity check passed. Feature importance: `avg_rank_tier`
+   contributes real but modest signal (importance 11, weakest of the 6
+   features) — independently confirmed on the Python side that ~16% of
+   randomly sampled feature combinations are genuinely rank-tier-
+   sensitive (score changes between Herald and Immortal), the rest are
+   not, which is expected at this still-modest bracket-4-6 sample size.
+7. Exported to ONNX (parity validated, max abs diff 1.19e-6, well under
+   the 1e-3 tolerance). Bundled model updated in
+   `src/DotaAiCoach.MlInference/Models/item-ranker/` — `model.onnx`,
+   `onnx_export_metadata.json`, `hero_item_popularity.json` (regenerated
+   via `scripts/export_popularity_table.py`), and (new) `metadata.json`
+   bundled for the first time so `ItemRankPredictor` can read
+   `avg_rank_tier_fill` directly from the model that produced it.
+8. C# updated to match the new 6-feature shape:
+   - `ItemRankInput.AverageRankTier` (Domain) — new required field.
+   - `IItemRankPredictor.AverageRankTierFill` — new interface member,
+     giving callers the model's own training-time fallback instead of
+     an arbitrary default when the player's rank tier isn't known yet.
+   - `ItemRankPredictor` (MlInference) — reads `metadata.json` at
+     construction, feeds `AverageRankTier` into the ONNX tensor at the
+     correct position.
+   - `NextItemSelector`/`NextItemRule` (RecommendationEngines) — thread
+     `RuleContext.AverageRankTier` through to `ItemRankInput`, falling
+     back to `itemRankPredictor.AverageRankTierFill` when unknown.
+9. Full test suite green: **336/336 C# tests** (`dotnet test
+   DotaAiCoach.sln`), **59/59 Python tests** (`pytest`). Fixed 3
+   pre-existing `HeroItemPopularityTableTests` hardcoded expected values
+   (stale from the old bundled popularity table — legitimately different
+   numbers now, independently re-verified against the new JSON file
+   directly, not just read back from the C# loader). Regenerated the
+   `item_ranker_parity.json` ONNX-parity fixture for the new model/shape.
+10. Live verification: `LiveItemPlanSmokeTests` (new,
+    `tests/DotaAiCoach.Host.Tests`) exercises the **actual bundled ONNX
+    model** (not a fake) end-to-end — constructs a real `ItemRankPredictor`
+    + `HeroItemPopularityTable.LoadFromBundledModels()`, confirms
+    `NextItemSelector.SelectByPhase` still produces a real multi-phase
+    item plan for a known hero, and confirms `AverageRankTier` genuinely
+    changes the ONNX model's output for a Python-verified rank-tier-
+    sensitive input (not a flaky arbitrary point — an initial attempt
+    with an insensitive input combination correctly failed and was
+    replaced with one independently confirmed sensitive on the Python
+    side first).
+
+**Known gap, not addressed by this pass:** `docs/ROADMAP.md` itself was
+found to have been overwritten (only this file's most recent two
+sections survived) rather than appended to in an earlier turn — the
+original Fase 0-9 history, known-limitations list, and prior "Recommended
+next phase" notes are not recoverable from this file anymore. Flagged to
+the user; not reconstructed here since doing so from memory risks
+introducing inaccurate history into a document whose whole purpose is to
+be an accurate record.
