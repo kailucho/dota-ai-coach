@@ -18,7 +18,11 @@ internal static class TestFeatures
         double? healthFraction = null,
         double? gameMinutes = null,
         IReadOnlyList<DomainEvent>? recentEvents = null,
-        int? heroLevel = null) => new()
+        int? heroLevel = null,
+        int? heroId = null,
+        string? team = null,
+        int? radiantScore = null,
+        int? direScore = null) => new()
     {
         IsUsable = true,
         FeedIsStale = false,
@@ -34,6 +38,10 @@ internal static class TestFeatures
         IsAlive = isAlive,
         HealthFraction = healthFraction,
         RecentEvents = recentEvents ?? Array.Empty<DomainEvent>(),
-        HeroLevel = heroLevel
+        HeroLevel = heroLevel,
+        HeroId = heroId,
+        Team = team,
+        RadiantScore = radiantScore,
+        DireScore = direScore
     };
 }

@@ -27,13 +27,24 @@ import numpy as np
 import pandas as pd
 import sklearn
 
-from dota_training.config import MODELS_DIR, RANDOM_SEED
+from dota_training.config import BRONZE_PATH, MODELS_DIR, RANDOM_SEED
 
 log = logging.getLogger(__name__)
 
 HERO_ITEM_PRIOR_STRENGTH = 20.0
 HERO_MINUTE_BUCKET_PRIOR_STRENGTH = 15.0
 MIN_SEGMENT_ROWS = 30  # lower than the 100-row gate used elsewhere: fewer rows are available per (hero, item) cell at this dataset scale
+
+
+def load_avg_rank_tier_by_match(bronze_path: Path = BRONZE_PATH) -> pd.Series:
+    """match_id -> avg_rank_tier lookup, sourced from BRONZE (see
+    docs/RESEARCH.md's OpenDota avg_rank_tier note). Used to give the
+    Item Ranker rank-awareness: per the user's live observation, low-
+    medal games skip early utility items (e.g. tangoes) that high-medal
+    games buy consistently -- avg_rank_tier lets the model learn that
+    distinction instead of averaging across it."""
+    bronze = pd.read_parquet(bronze_path, columns=["match_id", "avg_rank_tier"])
+    return bronze.set_index("match_id")["avg_rank_tier"]
 
 
 def _minute_bucket(minute: int) -> str:
@@ -83,13 +94,30 @@ def compute_item_popularity_tables(train_df: pd.DataFrame, all_items: list[str])
     }
 
 
-def build_candidate_rows(df: pd.DataFrame, all_items: list[str], tables: dict) -> pd.DataFrame:
+def build_candidate_rows(
+    df: pd.DataFrame,
+    all_items: list[str],
+    tables: dict,
+    avg_rank_tier_by_match: pd.Series | None = None,
+    avg_rank_tier_fill: float = 0.0,
+) -> pd.DataFrame:
     """One row per (state, candidate_item), candidate pool = all_items minus items_owned_before.
     Grouped by the original row's position (query_id) for ranking.
     Vectorized: a naive per-row Python loop over ~140k rows x ~114 items
-    (~16M candidate rows across all splits) was impractically slow."""
+    (~16M candidate rows across all splits) was impractically slow.
+
+    avg_rank_tier_by_match is a match_id -> avg_rank_tier lookup (see
+    load_avg_rank_tier_by_match); avg_rank_tier_fill is used for any
+    match_id missing from that lookup (e.g. OpenDota never populated
+    avg_rank_tier for that match) -- always the TRAIN split's median, to
+    avoid leaking val/test statistics into the fill value."""
     df = df.reset_index(drop=True)
     df = df.assign(query_id=df.index, minute_bucket=df["minute"].apply(_minute_bucket))
+
+    if avg_rank_tier_by_match is not None:
+        df["avg_rank_tier"] = df["match_id"].map(avg_rank_tier_by_match).fillna(avg_rank_tier_fill)
+    else:
+        df["avg_rank_tier"] = avg_rank_tier_fill
 
     all_items_df = pd.DataFrame({"candidate_item": all_items})
     # Cross join: every state row x every candidate item.
@@ -128,7 +156,7 @@ def build_candidate_rows(df: pd.DataFrame, all_items: list[str], tables: dict) -
 
     return expanded[
         [
-            "query_id", "match_id", "player_slot", "hero_id", "minute", "n_items_owned_before",
+            "query_id", "match_id", "player_slot", "hero_id", "minute", "n_items_owned_before", "avg_rank_tier",
             "candidate_item", "is_candidate_already_owned",
             "item_popularity_for_hero", "item_popularity_for_hero_minute_bucket", "item_global_popularity",
             "relevant",
@@ -195,6 +223,14 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
 
     tables = compute_item_popularity_tables(train_df, all_items)
 
+    avg_rank_tier_by_match = load_avg_rank_tier_by_match()
+    train_rank_tiers = train_df["match_id"].map(avg_rank_tier_by_match)
+    avg_rank_tier_fill = float(train_rank_tiers.median()) if train_rank_tiers.notna().any() else 0.0
+    log.info(
+        "avg_rank_tier: %d/%d train matches have a value, fill=%.2f",
+        train_rank_tiers.notna().sum(), len(train_rank_tiers), avg_rank_tier_fill,
+    )
+
     # --- Baseline 2 (unconditional "rule"): global popularity ---
     baseline_global = evaluate_popularity_baseline(val_df, all_items, tables, "global")
     log.info("baseline (global popularity, unconditional 'rule') on val: %s", baseline_global)
@@ -207,14 +243,15 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
     feature_cols = [
         "minute",
         "n_items_owned_before",
+        "avg_rank_tier",
         "item_popularity_for_hero",
         "item_popularity_for_hero_minute_bucket",
         "item_global_popularity",
     ]
 
-    train_candidates = build_candidate_rows(train_df, all_items, tables)
-    val_candidates = build_candidate_rows(val_df, all_items, tables)
-    test_candidates = build_candidate_rows(test_df, all_items, tables)
+    train_candidates = build_candidate_rows(train_df, all_items, tables, avg_rank_tier_by_match, avg_rank_tier_fill)
+    val_candidates = build_candidate_rows(val_df, all_items, tables, avg_rank_tier_by_match, avg_rank_tier_fill)
+    test_candidates = build_candidate_rows(test_df, all_items, tables, avg_rank_tier_by_match, avg_rank_tier_fill)
 
     assert not train_candidates["is_candidate_already_owned"].any(), "candidate pool must never include an already-owned item"
     assert not val_candidates["is_candidate_already_owned"].any(), "candidate pool must never include an already-owned item"
@@ -278,6 +315,20 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
         segments_by_bucket[bucket] = _ndcg_and_mrr(bucket_candidates, bucket_scores)
     log.info("segments by minute bucket: %s", segments_by_bucket)
 
+    # --- Segment by patch (see docs/adr/0021) -- the whole point of the
+    # multi-patch rebuild is to actually measure this rather than assume
+    # a single patch as the original 1863-match dataset forced. ---
+    segments_by_patch: dict = {}
+    for patch_value in sorted(test_df_indexed["patch"].dropna().unique()):
+        patch_query_ids = set(test_df_indexed[test_df_indexed["patch"] == patch_value]["query_id"])
+        patch_candidates = test_candidates[test_candidates["query_id"].isin(patch_query_ids)]
+        if patch_candidates["query_id"].nunique() < 5:
+            segments_by_patch[str(patch_value)] = {"n_queries": int(patch_candidates["query_id"].nunique()), "underpowered": True}
+            continue
+        patch_scores = ranker.predict(patch_candidates[feature_cols])
+        segments_by_patch[str(patch_value)] = _ndcg_and_mrr(patch_candidates, patch_scores)
+    log.info("segments by patch: %s", segments_by_patch)
+
     # --- Domain sanity check: ranker vs Baseline 1 top-1 agreement ---
     top1_ranker = test_candidates.assign(score=test_scores).sort_values(["query_id", "score"], ascending=[True, False]).groupby("query_id").first()
     top1_baseline = test_candidates.assign(score=test_candidates["item_popularity_for_hero"]).sort_values(
@@ -300,6 +351,7 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
         "model": {"lightgbm_lambdamart": ranker_val_metrics},
         "test_metrics_touched_once": test_metrics,
         "segments_by_minute_bucket": segments_by_bucket,
+        "segments_by_patch": segments_by_patch,
         "domain_sanity_check": sanity,
         "n_unique_items": len(all_items),
         "candidate_pool_note": "v1.0 candidate pool = all meaningful items minus items_owned_before, NOT gold-affordability-filtered -- see docs/adr/0020 Consequences.",
@@ -319,7 +371,16 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
     import pickle
 
     with open(model_dir / "model.pkl", "wb") as f:
-        pickle.dump({"model": ranker, "feature_columns": feature_cols, "tables": tables, "all_items": all_items}, f)
+        pickle.dump(
+            {
+                "model": ranker,
+                "feature_columns": feature_cols,
+                "tables": tables,
+                "all_items": all_items,
+                "avg_rank_tier_fill": avg_rank_tier_fill,
+            },
+            f,
+        )
 
     metadata = {
         "model_id": model_id,
@@ -330,6 +391,7 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
             "dataset_id": dataset_metadata["dataset_id"],
             "record_counts": dataset_metadata["record_counts"],
             "match_counts": dataset_metadata["match_counts"],
+            "avg_rank_tier_fill": avg_rank_tier_fill,
         },
         "code": {"git_commit": _git_commit()},
         "hyperparameters": {
@@ -347,7 +409,13 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
         },
         "fairplay": {
             "contains_postgame_only_features": False,
-            "note": "Hero, minute, items owned, and item popularity are all LiveAllowed/PublicPreflight-eligible. Not wired into the live app in this pass.",
+            "note": (
+                "Hero, minute, items owned, and item popularity are all LiveAllowed/PublicPreflight-eligible. "
+                "avg_rank_tier (OpenDota-computed average medal across all 10 players in the match) is "
+                "PublicPreflight -- known before a live match starts, via the player's own profile "
+                "(see PlayerProfile.RankTier already wired into the live app via CoachSession.SetAverageRankTier), "
+                "never derived from an opponent-only or postgame-only source."
+            ),
         },
         "evaluation_ref": "./evaluation.json",
     }

@@ -1,0 +1,275 @@
+{
+  "metadata": {
+    "source_model_id": "item-ranker-v1.0-20260810T203622Z",
+    "feature_order": [
+      "minute",
+      "n_items_owned_before",
+      "avg_rank_tier",
+      "item_popularity_for_hero",
+      "item_popularity_for_hero_minute_bucket",
+      "item_global_popularity"
+    ],
+    "n_cases": 16,
+    "max_abs_diff_raw_vs_onnx_achieved": 1.191656442856015e-06,
+    "generated_at": "2026-08-10T20:43:14.640053+00:00",
+    "note": "No calibration step for this model (ranking task, not a probability) -- expected_calibrated_output is always null."
+  },
+  "cases": [
+    {
+      "case_name": "edge_all_zero_missing_feature_fill",
+      "description": "All features zero -- the missing-feature/zero-fill convention used at training and inference time (df.fillna(0.0)).",
+      "input": {
+        "minute": 0.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 0.0,
+        "item_popularity_for_hero": 0.0,
+        "item_popularity_for_hero_minute_bucket": 0.0,
+        "item_global_popularity": 0.0
+      },
+      "expected_raw_output": -8.95623454264496,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.956233978271484,
+      "raw_vs_onnx_abs_diff": 5.643734759530616e-07
+    },
+    {
+      "case_name": "edge_extreme_large_positive",
+      "description": "All features set to an extreme large positive value (1e6) -- numerical-stability edge case.",
+      "input": {
+        "minute": 1000000.0,
+        "n_items_owned_before": 1000000.0,
+        "avg_rank_tier": 1000000.0,
+        "item_popularity_for_hero": 1000000.0,
+        "item_popularity_for_hero_minute_bucket": 1000000.0,
+        "item_global_popularity": 1000000.0
+      },
+      "expected_raw_output": 2.4366312891856237,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": 2.436631917953491,
+      "raw_vs_onnx_abs_diff": 6.287678675498398e-07
+    },
+    {
+      "case_name": "edge_extreme_large_negative",
+      "description": "All features set to an extreme large negative value (-1e6) -- numerical-stability edge case.",
+      "input": {
+        "minute": -1000000.0,
+        "n_items_owned_before": -1000000.0,
+        "avg_rank_tier": -1000000.0,
+        "item_popularity_for_hero": -1000000.0,
+        "item_popularity_for_hero_minute_bucket": -1000000.0,
+        "item_global_popularity": -1000000.0
+      },
+      "expected_raw_output": -8.95623454264496,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.956233978271484,
+      "raw_vs_onnx_abs_diff": 5.643734759530616e-07
+    },
+    {
+      "case_name": "edge_mid_boundary_0_5",
+      "description": "All features set to a boundary-ish mid value (0.5) -- boundary-value edge case.",
+      "input": {
+        "minute": 0.5,
+        "n_items_owned_before": 0.5,
+        "avg_rank_tier": 0.5,
+        "item_popularity_for_hero": 0.5,
+        "item_popularity_for_hero_minute_bucket": 0.5,
+        "item_global_popularity": 0.5
+      },
+      "expected_raw_output": 2.9062244105788064,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": 2.9062252044677734,
+      "raw_vs_onnx_abs_diff": 7.93888967010048e-07
+    },
+    {
+      "case_name": "representative_random_row_1",
+      "description": "Representative random row 1 (uniform[-1000, 1000], seed 42) -- typical-magnitude sanity case.",
+      "input": {
+        "minute": -250.91976928710938,
+        "n_items_owned_before": 901.4285888671875,
+        "avg_rank_tier": 463.9878845214844,
+        "item_popularity_for_hero": 197.3169708251953,
+        "item_popularity_for_hero_minute_bucket": -687.9627075195312,
+        "item_global_popularity": -688.010986328125
+      },
+      "expected_raw_output": -8.77778077081904,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.777779579162598,
+      "raw_vs_onnx_abs_diff": 1.191656442856015e-06
+    },
+    {
+      "case_name": "representative_random_row_2",
+      "description": "Representative random row 2 (uniform[-1000, 1000], seed 42) -- typical-magnitude sanity case.",
+      "input": {
+        "minute": -883.832763671875,
+        "n_items_owned_before": 732.352294921875,
+        "avg_rank_tier": 202.2300262451172,
+        "item_popularity_for_hero": 416.1451416015625,
+        "item_popularity_for_hero_minute_bucket": -958.8309936523438,
+        "item_global_popularity": 939.8197021484375
+      },
+      "expected_raw_output": -8.550504656051134,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.550503730773926,
+      "raw_vs_onnx_abs_diff": 9.252772077417148e-07
+    },
+    {
+      "case_name": "real_val_row_0",
+      "description": "Real candidate row 0 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 5.134861030002421e-05,
+        "item_popularity_for_hero_minute_bucket": 1.1687847564497166e-06,
+        "item_global_popularity": 0.0038562806335318183
+      },
+      "expected_raw_output": -8.987698537692744,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.987698554992676,
+      "raw_vs_onnx_abs_diff": 1.7299932153491682e-08
+    },
+    {
+      "case_name": "real_val_row_1",
+      "description": "Real candidate row 1 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 2.6537307003794027e-05,
+        "item_popularity_for_hero_minute_bucket": 6.040358195097275e-07,
+        "item_global_popularity": 0.0019929517559849315
+      },
+      "expected_raw_output": -8.987698537692744,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.987698554992676,
+      "raw_vs_onnx_abs_diff": 1.7299932153491682e-08
+    },
+    {
+      "case_name": "real_val_row_2",
+      "description": "Real candidate row 2 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 0.01215079641317012,
+        "item_popularity_for_hero_minute_bucket": 0.0002765735147155566,
+        "item_global_popularity": 0.012524810629076032
+      },
+      "expected_raw_output": -8.898436519569223,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.898435592651367,
+      "raw_vs_onnx_abs_diff": 9.269178562476554e-07
+    },
+    {
+      "case_name": "real_val_row_3",
+      "description": "Real candidate row 3 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 0.0552913960818745,
+        "item_popularity_for_hero_minute_bucket": 0.0012585295011048824,
+        "item_global_popularity": 0.05238384574877466
+      },
+      "expected_raw_output": -5.477609891761757,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -5.477609157562256,
+      "raw_vs_onnx_abs_diff": 7.34199501195576e-07
+    },
+    {
+      "case_name": "real_val_row_4",
+      "description": "Real candidate row 4 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 0.0040481798832434,
+        "item_popularity_for_hero_minute_bucket": 0.0031270450656276953,
+        "item_global_popularity": 0.004018309231579374
+      },
+      "expected_raw_output": -3.109979604713595,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -3.1099793910980225,
+      "raw_vs_onnx_abs_diff": 2.1361557234200745e-07
+    },
+    {
+      "case_name": "real_val_row_5",
+      "description": "Real candidate row 5 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 0.0013496809616990607,
+        "item_popularity_for_hero_minute_bucket": 3.07211144544551e-05,
+        "item_global_popularity": 0.0013610402235994653
+      },
+      "expected_raw_output": -8.987698537692744,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.987698554992676,
+      "raw_vs_onnx_abs_diff": 1.7299932153491682e-08
+    },
+    {
+      "case_name": "real_val_row_6",
+      "description": "Real candidate row 6 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 0.12164534323930011,
+        "item_popularity_for_hero_minute_bucket": 0.25011332344247267,
+        "item_global_popularity": 0.035565277271438406
+      },
+      "expected_raw_output": -0.31475374406872864,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -0.31475362181663513,
+      "raw_vs_onnx_abs_diff": 1.2225209350402721e-07
+    },
+    {
+      "case_name": "real_val_row_7",
+      "description": "Real candidate row 7 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 2.7723934552744167e-05,
+        "item_popularity_for_hero_minute_bucket": 6.310455512764226e-07,
+        "item_global_popularity": 0.002082067484911087
+      },
+      "expected_raw_output": -8.987698537692744,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.987698554992676,
+      "raw_vs_onnx_abs_diff": 1.7299932153491682e-08
+    },
+    {
+      "case_name": "real_val_row_8",
+      "description": "Real candidate row 8 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 4.7249351494560096e-05,
+        "item_popularity_for_hero_minute_bucket": 1.0754784103465878e-06,
+        "item_global_popularity": 0.003548426297241463
+      },
+      "expected_raw_output": -8.987698537692744,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.987698554992676,
+      "raw_vs_onnx_abs_diff": 1.7299932153491682e-08
+    },
+    {
+      "case_name": "real_val_row_9",
+      "description": "Real candidate row 9 from val.parquet's build_candidate_rows output (deterministic, first 10 rows by positional index).",
+      "input": {
+        "minute": 2.0,
+        "n_items_owned_before": 0.0,
+        "avg_rank_tier": 41.0,
+        "item_popularity_for_hero": 9.82743360994161e-05,
+        "item_popularity_for_hero_minute_bucket": 2.2368968763144786e-06,
+        "item_global_popularity": 0.007380402641066148
+      },
+      "expected_raw_output": -8.987698537692744,
+      "expected_calibrated_output": null,
+      "expected_onnx_output": -8.987698554992676,
+      "raw_vs_onnx_abs_diff": 1.7299932153491682e-08
+    }
+  ]
+}

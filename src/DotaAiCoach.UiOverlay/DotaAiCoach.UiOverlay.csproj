@@ -13,6 +13,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- WPF has no native system-tray control; System.Windows.Forms.NotifyIcon is the standard, well-supported way to add one to a WPF app. Used only for the tray icon/context menu, nothing else from WinForms. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <!--
       Overrides Directory.Build.props's InvariantGlobalization=true:
       WPF's text/font layout engine (MS.Internal.FontCache.MajorLanguages)

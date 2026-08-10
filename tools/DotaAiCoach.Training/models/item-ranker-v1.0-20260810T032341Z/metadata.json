@@ -1,0 +1,56 @@
+{
+  "model_id": "item-ranker-v1.0-20260810T032341Z",
+  "model_name": "item-ranker",
+  "version": {
+    "major": 1,
+    "minor": 0
+  },
+  "training_run_id": "20260810T032341Z",
+  "data": {
+    "dataset_id": "item-events-2759-20260810",
+    "record_counts": {
+      "train": 122239,
+      "val": 31391,
+      "calib": 20786,
+      "test": 31168
+    },
+    "match_counts": {
+      "train": 1655,
+      "val": 413,
+      "calib": 275,
+      "test": 416
+    }
+  },
+  "code": {
+    "git_commit": "8bae0b1328fea67912a1af99170f8ae12f572cff"
+  },
+  "hyperparameters": {
+    "lightgbm_ranker": {
+      "objective": "lambdarank",
+      "n_estimators": 100,
+      "num_leaves": 15,
+      "learning_rate": 0.1,
+      "min_child_samples": 20,
+      "random_state": 42,
+      "verbosity": -1,
+      "n_jobs": 4
+    },
+    "hero_item_prior_strength": 20.0,
+    "hero_minute_bucket_prior_strength": 15.0
+  },
+  "seeds": {
+    "random_seed": 42
+  },
+  "libraries": {
+    "python": "3.11.1",
+    "lightgbm": "4.7.0",
+    "scikit-learn": "1.9.0",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6"
+  },
+  "fairplay": {
+    "contains_postgame_only_features": false,
+    "note": "Hero, minute, items owned, and item popularity are all LiveAllowed/PublicPreflight-eligible. Not wired into the live app in this pass."
+  },
+  "evaluation_ref": "./evaluation.json"
+}

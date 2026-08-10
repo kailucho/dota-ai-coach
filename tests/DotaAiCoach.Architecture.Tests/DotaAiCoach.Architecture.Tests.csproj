@@ -26,6 +26,8 @@
     <ProjectReference Include="..\..\src\DotaAiCoach.Gsi\DotaAiCoach.Gsi.csproj" />
     <ProjectReference Include="..\..\src\DotaAiCoach.PlayerProfile\DotaAiCoach.PlayerProfile.csproj" />
     <ProjectReference Include="..\..\src\DotaAiCoach.OpenDota\DotaAiCoach.OpenDota.csproj" />
+    <ProjectReference Include="..\..\src\DotaAiCoach.MlInference\DotaAiCoach.MlInference.csproj" />
+    <ProjectReference Include="..\..\src\DotaAiCoach.RecommendationEngines\DotaAiCoach.RecommendationEngines.csproj" />
   </ItemGroup>
 
 </Project>

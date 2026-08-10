@@ -1,0 +1,105 @@
+{
+  "source_model_id": "draft-baseline-v1.0-20260810T032042Z",
+  "source_metadata_ref": "./metadata.json",
+  "export_library": "skl2onnx",
+  "export_library_version": "1.20.0",
+  "onnx_ir_version": 8,
+  "onnx_opset": 17,
+  "onnxruntime_version": "1.28.0",
+  "input_schema": {
+    "name": "input",
+    "shape": [
+      "batch",
+      2
+    ],
+    "dtype": "float32",
+    "feature_order": [
+      "hero_winrate_diff",
+      "matchup_advantage"
+    ],
+    "note": "first_blood_radiant is encoded as float (True=1.0, False=0.0, missing=0.5) before this point, matching train.py/train_live.py's _prepare_xy. Missing/absent features must be filled with 0.0 before scaling, matching training-time behavior (df.fillna(0.0))."
+  },
+  "output_schema": {
+    "name": "probabilities",
+    "shape": [
+      "batch",
+      2
+    ],
+    "dtype": "float32",
+    "note": "column 1 (index 1) is P(radiant_win=1). zipmap disabled so output is a plain float tensor, not a list of dicts."
+  },
+  "preprocessing_included_in_graph": [
+    "StandardScaler"
+  ],
+  "calibration_included_in_graph": false,
+  "calibration_replication": {
+    "x_thresholds": [
+      0.09350477579798343,
+      0.10530615254187835,
+      0.1265249728560538,
+      0.15954427659623374,
+      0.16361548207658258,
+      0.2196598037494958,
+      0.22469541556847014,
+      0.4298912050377369,
+      0.43042313516376063,
+      0.6434082093089211,
+      0.6465206780340274,
+      0.875248580842826,
+      0.8823741984228284,
+      0.9205872099088586,
+      0.9453995577826774
+    ],
+    "y_thresholds": [
+      0.0,
+      0.0,
+      0.375,
+      0.375,
+      0.4666666666666667,
+      0.4666666666666667,
+      0.5211267605633803,
+      0.5211267605633803,
+      0.5217391304347826,
+      0.5217391304347826,
+      0.5555555555555556,
+      0.5555555555555556,
+      0.8,
+      0.8,
+      1.0
+    ],
+    "out_of_bounds": "clip",
+    "reconstruction_note": "predicted = clip(x, min(x_thresholds), max(x_thresholds)); then linear-interpolate y_thresholds over x_thresholds at that clipped x (numpy: np.interp(x_clipped, x_thresholds, y_thresholds)). Equivalent to sklearn.isotonic.IsotonicRegression.predict with out_of_bounds='clip'."
+  },
+  "calibration_recheck_on_exported_model": {
+    "checked_on": "val split, real data",
+    "n": 414,
+    "ece_calibrated_onnx_outputs": 0.01145011217464993,
+    "auc_calibrated_onnx_outputs": 0.5009356944022082,
+    "note": "Matches (within float32 tolerance) the training-time calibration/AUC recorded in evaluation.json, confirming the exported graph did not shift the output distribution."
+  },
+  "validation": {
+    "test_inputs_description": "6 fixed rows: all-zero, large-positive, large-negative, mid-boundary, 2 representative random rows",
+    "n_test_rows": 6,
+    "max_abs_diff_probability": 1.0910776060413241e-08,
+    "tolerance": 0.0001,
+    "passed": true,
+    "original_probabilities": [
+      0.7762486447723178,
+      1.0,
+      0.0,
+      0.9999999999999465,
+      1.0,
+      1.0
+    ],
+    "onnx_probabilities": [
+      0.7762486338615417,
+      1.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "latency_ms_per_single_row_inference": 0.03667249999125488,
+    "latency_note": "averaged over 200 calls, single row, CPUExecutionProvider, this dev machine -- rough sanity figure only, not a rigorous benchmark"
+  }
+}

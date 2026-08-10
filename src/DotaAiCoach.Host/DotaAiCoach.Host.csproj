@@ -24,6 +24,17 @@
     <ProjectReference Include="..\DotaAiCoach.Domain\DotaAiCoach.Domain.csproj" />
     <ProjectReference Include="..\DotaAiCoach.FeatureEngine\DotaAiCoach.FeatureEngine.csproj" PrivateAssets="compile" />
     <ProjectReference Include="..\DotaAiCoach.RecommendationEngines\DotaAiCoach.RecommendationEngines.csproj" PrivateAssets="compile" />
+    <!--
+      Host is the wiring layer for ML predictors: it constructs the
+      concrete DotaAiCoach.MlInference types and passes them into
+      RuleRecommendationEngine only through the Domain.MlInference
+      interfaces, so RecommendationEngines itself never references
+      MlInference/OnnxRuntime directly (see
+      DotaAiCoach.Architecture.Tests' RecommendationEngines_does_not_
+      reference_OnnxRuntime_directly). Mirrors the Gsi/OpenDota firewall
+      pattern above.
+    -->
+    <ProjectReference Include="..\DotaAiCoach.MlInference\DotaAiCoach.MlInference.csproj" PrivateAssets="compile" />
 
     <!--
       Same firewall pattern as Gsi above, applied to the Fase 2 player
@@ -34,6 +45,13 @@
     -->
     <ProjectReference Include="..\DotaAiCoach.OpenDota\DotaAiCoach.OpenDota.csproj" PrivateAssets="compile" />
     <ProjectReference Include="..\DotaAiCoach.PlayerProfile\DotaAiCoach.PlayerProfile.csproj" />
+
+    <!--
+      Same firewall pattern: the OpenAI SDK and its request/response
+      types must never be compile-time visible to UiOverlay, only the
+      DotaAiCoach.Domain.LlmCoach types exposed through ILlmCoachSession.
+    -->
+    <ProjectReference Include="..\DotaAiCoach.LlmCoach\DotaAiCoach.LlmCoach.csproj" PrivateAssets="compile" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -41,5 +59,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DotaAiCoach.Host.Tests" />
+  </ItemGroup>
 
 </Project>

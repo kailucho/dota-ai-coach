@@ -1,0 +1,188 @@
+{
+  "baselines": {
+    "constant_train_prior": {
+      "auc_roc": 0.5,
+      "log_loss": 0.6919915305540892,
+      "brier": 0.2494223902541483,
+      "n": 414
+    },
+    "single_feature_logreg_hero_winrate_diff": {
+      "auc_roc": 0.4848300545041989,
+      "log_loss": 0.6994752104561961,
+      "brier": 0.2530968791176206,
+      "n": 414
+    }
+  },
+  "model": {
+    "logistic_regression": {
+      "auc_roc": 0.496081779690753,
+      "log_loss": 0.7869865981724533,
+      "brier": 0.28885821340525863,
+      "n": 414
+    }
+  },
+  "logreg_coefficients": {
+    "hero_winrate_diff": 0.1853838867928751,
+    "matchup_advantage": 1.74216274772952
+  },
+  "c_search_results": {
+    "1.0": 0.4957542866499801,
+    "0.1": 0.4953800088890967,
+    "0.01": 0.496081779690753,
+    "0.001": 0.49030386675711707
+  },
+  "calibration": {
+    "pre_calibration_ece_val": 0.17058575081488953,
+    "post_calibration_ece_val": 0.01145011593054005,
+    "pre_calibration_curve_val": [
+      {
+        "bin": 0,
+        "predicted_mean": 0.0778658080635016,
+        "observed_rate": 0.3333333333333333,
+        "n": 3
+      },
+      {
+        "bin": 1,
+        "predicted_mean": 0.1631345162068572,
+        "observed_rate": 0.4090909090909091,
+        "n": 22
+      },
+      {
+        "bin": 2,
+        "predicted_mean": 0.24410518265824258,
+        "observed_rate": 0.5813953488372093,
+        "n": 43
+      },
+      {
+        "bin": 3,
+        "predicted_mean": 0.34851795131783003,
+        "observed_rate": 0.5,
+        "n": 68
+      },
+      {
+        "bin": 4,
+        "predicted_mean": 0.4459551763260279,
+        "observed_rate": 0.5428571428571428,
+        "n": 70
+      },
+      {
+        "bin": 5,
+        "predicted_mean": 0.5528024880125603,
+        "observed_rate": 0.581081081081081,
+        "n": 74
+      },
+      {
+        "bin": 6,
+        "predicted_mean": 0.6479754421243072,
+        "observed_rate": 0.5166666666666667,
+        "n": 60
+      },
+      {
+        "bin": 7,
+        "predicted_mean": 0.752051521017344,
+        "observed_rate": 0.48936170212765956,
+        "n": 47
+      },
+      {
+        "bin": 8,
+        "predicted_mean": 0.8471036015204985,
+        "observed_rate": 0.4166666666666667,
+        "n": 24
+      },
+      {
+        "bin": 9,
+        "predicted_mean": 0.930128944663883,
+        "observed_rate": 1.0,
+        "n": 3
+      }
+    ],
+    "post_calibration_curve_val": [
+      {
+        "bin": 0,
+        "predicted_mean": 0.011615596865545382,
+        "observed_rate": 0.25,
+        "n": 4
+      },
+      {
+        "bin": 1,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 2,
+        "predicted_mean": 0.2678871726693042,
+        "observed_rate": 0.0,
+        "n": 1
+      },
+      {
+        "bin": 3,
+        "predicted_mean": 0.3641468507992999,
+        "observed_rate": 0.6,
+        "n": 5
+      },
+      {
+        "bin": 4,
+        "predicted_mean": 0.4673780977877282,
+        "observed_rate": 0.4827586206896552,
+        "n": 29
+      },
+      {
+        "bin": 5,
+        "predicted_mean": 0.5307622528458894,
+        "observed_rate": 0.5257452574525745,
+        "n": 369
+      },
+      {
+        "bin": 6,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 7,
+        "predicted_mean": null,
+        "observed_rate": null,
+        "n": 0
+      },
+      {
+        "bin": 8,
+        "predicted_mean": 0.8084701999487752,
+        "observed_rate": 0.8,
+        "n": 5
+      },
+      {
+        "bin": 9,
+        "predicted_mean": 1.0,
+        "observed_rate": 1.0,
+        "n": 1
+      }
+    ]
+  },
+  "test_metrics_touched_once": {
+    "auc_roc": 0.5091849662162162,
+    "log_loss": 1.203530173323183,
+    "brier": 0.2605689748302583,
+    "n": 414
+  },
+  "segments": {
+    "by_patch": {
+      "60": {
+        "n": 414,
+        "auc_roc": 0.5091849662162162,
+        "log_loss": 1.203530173323183,
+        "brier": 0.2605689748302583
+      }
+    }
+  },
+  "domain_sanity_checks": {
+    "top5_vs_bottom5_heroes": {
+      "passed": true,
+      "p_radiant_wins_with_top5": 0.9555023994658138,
+      "p_radiant_wins_with_bottom5": 0.05402739418518814
+    }
+  },
+  "overall_train_winrate_prior": 0.5217391304347826,
+  "hero_winrate_table_size": 376,
+  "matchup_matrix_size": 7335
+}

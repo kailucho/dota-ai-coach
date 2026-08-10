@@ -1,3 +1,4 @@
+using DotaAiCoach.Domain.MlInference;
 using DotaAiCoach.Domain.Recommendations;
 using DotaAiCoach.FeatureEngine;
 
@@ -7,6 +8,25 @@ public sealed record RuleContext
 {
     public required DateTimeOffset Now { get; init; }
     public IItemCatalog Items { get; init; } = ItemCatalog.Default;
+
+    /// <summary>
+    /// Optional ML predictors, wired by Host (the only layer allowed to
+    /// reference DotaAiCoach.MlInference). Null when ML is not wired
+    /// (e.g. tests) — rules must fall back to their non-ML behavior
+    /// rather than throw. See docs/adr/0023, docs/ROADMAP.md.
+    /// </summary>
+    public IItemRankPredictor? ItemRankPredictor { get; init; }
+    public IHeroItemPopularityLookup? ItemPopularity { get; init; }
+    public IWinProbabilityPredictor? WinProbabilityPredictor { get; init; }
+
+    /// <summary>
+    /// The player's average rank tier (PUBLIC_PREFLIGHT, sourced from the
+    /// separate player-profile/OpenDota lookup, never from GSI) for
+    /// WinProbabilityInput.AverageRankTier. Null when unknown — the rule
+    /// fills 0.0, matching the model's documented missing-value
+    /// convention, rather than fabricating a value.
+    /// </summary>
+    public int? AverageRankTier { get; init; }
 }
 
 /// <summary>

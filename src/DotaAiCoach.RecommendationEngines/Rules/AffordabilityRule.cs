@@ -19,7 +19,7 @@ public sealed class AffordabilityRule : IRule
 
     public Recommendation? Evaluate(LiveFeatureSet features, RuleContext context)
     {
-        var candidates = NextItemSelector.SelectCandidates(features, 1, context.Items);
+        var candidates = NextItemSelector.SelectCandidates(features, 1, context.Items, context.ItemRankPredictor, context.ItemPopularity);
         if (candidates.Count == 0)
         {
             return null;

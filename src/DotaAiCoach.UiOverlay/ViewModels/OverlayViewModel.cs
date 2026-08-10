@@ -1,12 +1,50 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using DotaAiCoach.Domain.Match;
 using DotaAiCoach.Domain.Recommendations;
 using DotaAiCoach.Host;
 
 namespace DotaAiCoach.UiOverlay.ViewModels;
+
+/// <summary>Display-ready item icon cell within a phase's grid — icon loads asynchronously, starting null (blank cell with a tooltip name) until resolved.</summary>
+public sealed class ItemPlanDisplayEntry : INotifyPropertyChanged
+{
+    public string ItemDisplayName { get; }
+    private BitmapImage? _iconImage;
+    public BitmapImage? IconImage
+    {
+        get => _iconImage;
+        set { _iconImage = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IconImage))); }
+    }
+
+    public ItemPlanDisplayEntry(string itemDisplayName)
+    {
+        ItemDisplayName = itemDisplayName;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+}
+
+/// <summary>
+/// One phase's labeled group of item icons — e.g. "EARLY" with a grid of
+/// item cells, matching Dota's own in-game item guide layout (a heading
+/// per category, several item icons in a grid underneath) per the user's
+/// explicit request.
+/// </summary>
+public sealed class ItemPlanPhaseGroup
+{
+    public string PhaseLabel { get; }
+    public ObservableCollection<ItemPlanDisplayEntry> Items { get; }
+
+    public ItemPlanPhaseGroup(string phaseLabel, ObservableCollection<ItemPlanDisplayEntry> items)
+    {
+        PhaseLabel = phaseLabel;
+        Items = items;
+    }
+}
 
 /// <summary>
 /// Formats and binds ICoachSession's Domain-only output for display.
@@ -19,14 +57,17 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
 {
     private readonly ICoachSession _session;
     private readonly Dispatcher _dispatcher;
+    private readonly ItemIconCache _iconCache;
 
-    public OverlayViewModel(ICoachSession session, Dispatcher dispatcher)
+    public OverlayViewModel(ICoachSession session, Dispatcher dispatcher, ItemIconCache? iconCache = null)
     {
         _session = session;
         _dispatcher = dispatcher;
+        _iconCache = iconCache ?? new ItemIconCache();
         _session.Updated += OnUpdated;
         Messages = new ObservableCollection<LiveMessage>();
         ItemNames = new ObservableCollection<string>();
+        ItemPlanGroups = new ObservableCollection<ItemPlanPhaseGroup>();
         Refresh();
     }
 
@@ -46,21 +87,31 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public ObservableCollection<string> ItemNames { get; }
     public ObservableCollection<LiveMessage> Messages { get; }
 
+    /// <summary>
+    /// The always-visible item plan, grouped by phase (Early/Mid/Late/
+    /// Situational) — deliberately not part of Messages/LiveMessageBudget's
+    /// cooldown-gated feed (see ICoachSession.CurrentItemPlan /
+    /// dota-live-coach). Each phase group holds several item icon cells,
+    /// mirroring Dota's own in-game item guide grid layout. Icons load
+    /// asynchronously from ItemIconCache.
+    /// </summary>
+    public ObservableCollection<ItemPlanPhaseGroup> ItemPlanGroups { get; }
+
     private void OnUpdated(object? sender, CoachUpdate update)
     {
         if (_dispatcher.CheckAccess())
         {
-            Apply(update.State, update.Health, update.Messages);
+            Apply(update.State, update.Health, update.Messages, update.ItemPlan);
         }
         else
         {
-            _dispatcher.Invoke(() => Apply(update.State, update.Health, update.Messages));
+            _dispatcher.Invoke(() => Apply(update.State, update.Health, update.Messages, update.ItemPlan));
         }
     }
 
-    private void Refresh() => Apply(_session.CurrentState, _session.Health, _session.ActiveMessages);
+    private void Refresh() => Apply(_session.CurrentState, _session.Health, _session.ActiveMessages, _session.CurrentItemPlan);
 
-    private void Apply(MatchState state, FeedHealth health, IReadOnlyList<LiveMessage> messages)
+    private void Apply(MatchState state, FeedHealth health, IReadOnlyList<LiveMessage> messages, ItemPlan itemPlan)
     {
         HeroName = FormatHeroName(state.Hero.Name);
         ClockText = FormatClock(state.Match.ClockTime);
@@ -91,7 +142,43 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             Messages.Add(message);
         }
 
+        ItemPlanGroups.Clear();
+        // Group in the order phases already arrive (NextItemSelector emits
+        // Early, then Mid, then Late, then Situational — see AllPhases),
+        // never re-sorted alphabetically, so the guide reads in
+        // progression order like a real Dota item guide.
+        foreach (var phaseGroup in itemPlan.Entries.GroupBy(e => e.PhaseLabel))
+        {
+            var items = new ObservableCollection<ItemPlanDisplayEntry>();
+            var group = new ItemPlanPhaseGroup(phaseGroup.Key.ToUpperInvariant(), items);
+            ItemPlanGroups.Add(group);
+
+            foreach (var entry in phaseGroup)
+            {
+                var display = new ItemPlanDisplayEntry(entry.ItemDisplayName);
+                items.Add(display);
+                LoadIconAsync(display, entry.ItemId);
+            }
+        }
+
         RaiseAllPropertiesChanged();
+    }
+
+    private async void LoadIconAsync(ItemPlanDisplayEntry entry, string itemId)
+    {
+        // Fire-and-forget by design: this is a best-effort icon fetch for
+        // a display row that already has its text visible. A failure
+        // (network, unmapped id) leaves IconImage null — the XAML
+        // template shows text-only in that case, never an error.
+        var icon = await _iconCache.GetIconAsync(itemId, CancellationToken.None);
+        if (_dispatcher.CheckAccess())
+        {
+            entry.IconImage = icon;
+        }
+        else
+        {
+            _dispatcher.Invoke(() => entry.IconImage = icon);
+        }
     }
 
     private static string FormatHeroName(string? internalName)

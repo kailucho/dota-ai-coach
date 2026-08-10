@@ -55,4 +55,33 @@ public class RuleRecommendationEngineTests
         act.Should().NotThrow();
         act().Should().ContainSingle(r => r.RuleId == "next-item");
     }
+
+    [Fact]
+    public void Constructor_wired_ML_predictors_flow_through_to_rules_via_RuleContext()
+    {
+        var winProbabilityPredictor = new FakeWinProbabilityPredictor(0.8);
+        var engine = new RuleRecommendationEngine(
+            new IRule[] { new WinProbabilityRule() },
+            winProbabilityPredictor: winProbabilityPredictor);
+        var features = TestFeatures.Usable(gameMinutes: 10, team: "radiant");
+
+        var result = engine.Evaluate(features);
+
+        result.Should().ContainSingle(r => r.RuleId == "win-probability" && r.Message.Contains("80%"));
+    }
+
+    [Fact]
+    public void SetAverageRankTier_propagates_to_WinProbabilityRule_on_the_next_Evaluate()
+    {
+        var predictor = new FakeWinProbabilityPredictor(0.5);
+        var engine = new RuleRecommendationEngine(
+            new IRule[] { new WinProbabilityRule() },
+            winProbabilityPredictor: predictor);
+        var features = TestFeatures.Usable(gameMinutes: 10, team: "radiant");
+
+        engine.SetAverageRankTier(72);
+        engine.Evaluate(features);
+
+        predictor.LastInput!.AverageRankTier.Should().Be(72.0);
+    }
 }

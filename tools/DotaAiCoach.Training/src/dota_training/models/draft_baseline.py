@@ -36,6 +36,7 @@ from dota_training.models.evaluate import (
     calibration_curve,
     core_metrics,
     expected_calibration_error,
+    segment_by_patch,
 )
 
 log = logging.getLogger(__name__)
@@ -141,6 +142,7 @@ def compute_draft_features(
                 "hero_winrate_diff": hero_winrate_diff,
                 "matchup_advantage": matchup_advantage,
                 "radiant_win": row["radiant_win"],
+                "patch": patch,
             }
         )
     return pd.DataFrame(rows)
@@ -237,6 +239,12 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
     test_metrics = core_metrics(y_test, calibrated_test_proba)
     log.info("FINAL test metrics (touched once): %s", test_metrics)
 
+    # --- By-patch segmentation (see docs/adr/0021): the whole point of the
+    # multi-patch rebuild is to actually measure this instead of assuming
+    # a single patch, as the original 1863-match dataset forced.
+    by_patch = segment_by_patch(test_features, y_test, calibrated_test_proba)
+    log.info("by-patch segmentation (test): %s", by_patch)
+
     # --- Domain sanity check: a top-tier hero pool should not score below a random one ---
     top_heroes_by_winrate = sorted(
         {h for h, p in hero_winrates.keys()}, key=lambda h: hero_winrates.get((h, train_df["patch"].mode()[0]), overall_winrate), reverse=True
@@ -278,6 +286,7 @@ def train_and_evaluate(dataset_dir: Path) -> dict:
             "post_calibration_curve_val": post_curve,
         },
         "test_metrics_touched_once": test_metrics,
+        "segments": {"by_patch": by_patch},
         "domain_sanity_checks": sanity,
         "overall_train_winrate_prior": overall_winrate,
         "hero_winrate_table_size": len(hero_winrates),

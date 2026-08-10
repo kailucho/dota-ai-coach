@@ -28,6 +28,7 @@ public sealed record LiveFeatureSet : ILiveRecommendationInput
     public double? GameMinutes { get; init; }
 
     public string? HeroName { get; init; }
+    public int? HeroId { get; init; }
     public int? HeroLevel { get; init; }
     public bool? IsAlive { get; init; }
     public int? RespawnSeconds { get; init; }
@@ -53,6 +54,14 @@ public sealed record LiveFeatureSet : ILiveRecommendationInput
     public int? BuybackCost { get; init; }
     public int? BuybackCooldown { get; init; }
     public int? GoldShortOfBuyback { get; init; }
+
+    /// <summary>Raw team string as received ("radiant"/"dire"), per PlayerSnapshot.Team.</summary>
+    public string? Team { get; init; }
+    public bool? IsRadiant => Team is null ? null : string.Equals(Team, "radiant", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Team kill totals from GSI's public map.radiant_score/dire_score, always LiveAllowed.</summary>
+    public int? RadiantScore { get; init; }
+    public int? DireScore { get; init; }
 
     public IReadOnlyList<DomainEvent> RecentEvents { get; init; } = Array.Empty<DomainEvent>();
 

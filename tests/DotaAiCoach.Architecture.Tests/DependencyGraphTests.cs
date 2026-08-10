@@ -111,6 +111,32 @@ public class DependencyGraphTests
     }
 
     [Fact]
+    public void MlInference_references_no_infrastructure_beyond_OnnxRuntime()
+    {
+        var refs = ReferencedAssemblyNames(typeof(MlInference.WinProbabilityPredictor));
+
+        refs.Should().NotContain("DotaAiCoach.Gsi");
+        refs.Should().NotContain("DotaAiCoach.FeatureEngine");
+        refs.Should().NotContain("DotaAiCoach.RecommendationEngines");
+        refs.Should().NotContain("DotaAiCoach.UiOverlay");
+        refs.Should().NotContain("PresentationFramework");
+        refs.Should().NotContain("PresentationCore");
+    }
+
+    [Fact]
+    public void RecommendationEngines_does_not_reference_OnnxRuntime_directly()
+    {
+        // RecommendationEngines may consume ML predictions only through
+        // the Domain-defined predictor interfaces (IWinProbabilityPredictor
+        // etc.) implemented by MlInference -- it must never see ONNX
+        // Runtime types directly (dota-architecture dependency graph).
+        var refs = ReferencedAssemblyNames(typeof(RecommendationEngines.RuleRecommendationEngine));
+
+        refs.Should().NotContain("Microsoft.ML.OnnxRuntime");
+        refs.Should().NotContain("DotaAiCoach.MlInference");
+    }
+
+    [Fact]
     public void UiOverlay_references_no_OpenDota_directly_or_transitively()
     {
         // The stronger, assembly-graph form of the raw-text check above:
@@ -120,5 +146,18 @@ public class DependencyGraphTests
 
         refs.Should().NotContain("DotaAiCoach.OpenDota",
             "the UI must never see OpenDota's HTTP/cache internals, even transitively through Host — see Host.csproj's PrivateAssets setting");
+    }
+
+    [Fact]
+    public void UiOverlay_references_no_LlmCoach_or_OpenAI_directly_or_transitively()
+    {
+        // Same firewall as OpenDota above: the UI must only see the LLM
+        // calls through ILlmCoachSession/Domain.LlmCoach types, never
+        // DotaAiCoach.LlmCoach or the OpenAI SDK itself.
+        var refs = ReferencedAssemblyNames(typeof(UiOverlay.MainWindow));
+
+        refs.Should().NotContain("DotaAiCoach.LlmCoach",
+            "the UI must never see the OpenAI SDK internals, even transitively through Host — see Host.csproj's PrivateAssets setting");
+        refs.Should().NotContain("OpenAI");
     }
 }

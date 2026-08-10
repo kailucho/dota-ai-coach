@@ -46,6 +46,7 @@ public sealed class FeatureEngine : IFeatureEngine
             GameMinutes = gameMinutes,
 
             HeroName = state.Hero.Name,
+            HeroId = state.Hero.Id,
             HeroLevel = state.Hero.Level,
             IsAlive = state.Hero.Alive,
             RespawnSeconds = state.Hero.RespawnSeconds,
@@ -69,6 +70,10 @@ public sealed class FeatureEngine : IFeatureEngine
             BuybackCost = state.Hero.BuybackCost,
             BuybackCooldown = state.Hero.BuybackCooldown,
             GoldShortOfBuyback = goldShort,
+
+            Team = state.Player.Team,
+            RadiantScore = state.Match.RadiantScore,
+            DireScore = state.Match.DireScore,
 
             RecentEvents = recentEvents
         };

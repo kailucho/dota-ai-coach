@@ -1,0 +1,73 @@
+{
+  "baselines": {
+    "global_popularity_unconditional_rule": {
+      "ndcg@3": 0.18876612615344934,
+      "ndcg@5": 0.22978134461859334,
+      "mrr": 0.2333755042185587,
+      "n_queries": 31604,
+      "n_queries_with_relevant_candidate": 31604
+    },
+    "hero_popularity_bayesian_shrunk": {
+      "ndcg@3": 0.38795646506907294,
+      "ndcg@5": 0.4370194738143886,
+      "mrr": 0.41558961274756423,
+      "n_queries": 31604,
+      "n_queries_with_relevant_candidate": 31604
+    }
+  },
+  "model": {
+    "lightgbm_lambdamart": {
+      "ndcg@3": 0.5237246836859524,
+      "ndcg@5": 0.5676294127878273,
+      "mrr": 0.5401626126468216,
+      "n_queries": 31604,
+      "n_queries_with_relevant_candidate": 31604
+    }
+  },
+  "test_metrics_touched_once": {
+    "ndcg@3": 0.5234446991364171,
+    "ndcg@5": 0.5670508784169996,
+    "mrr": 0.5388484084538038,
+    "n_queries": 31236,
+    "n_queries_with_relevant_candidate": 31236
+  },
+  "segments_by_minute_bucket": {
+    "early": {
+      "ndcg@3": 0.6911228308007009,
+      "ndcg@5": 0.7298436503898608,
+      "mrr": 0.6879330427499827,
+      "n_queries": 12887,
+      "n_queries_with_relevant_candidate": 12887
+    },
+    "mid": {
+      "ndcg@3": 0.4465562760381946,
+      "ndcg@5": 0.4922580931220061,
+      "mrr": 0.47256780720037,
+      "n_queries": 11132,
+      "n_queries_with_relevant_candidate": 11132
+    },
+    "late": {
+      "ndcg@3": 0.3426291030676612,
+      "ndcg@5": 0.3917263437751274,
+      "mrr": 0.37487195992648886,
+      "n_queries": 7217,
+      "n_queries_with_relevant_candidate": 7217
+    }
+  },
+  "segments_by_patch": {
+    "60": {
+      "ndcg@3": 0.5234446991364171,
+      "ndcg@5": 0.5670508784169996,
+      "mrr": 0.5388484084538038,
+      "n_queries": 31236,
+      "n_queries_with_relevant_candidate": 31236
+    }
+  },
+  "domain_sanity_check": {
+    "ranker_vs_baseline1_top1_agreement_rate": 0.46721731335638367,
+    "chance_rate": 0.008771929824561403,
+    "passed": true
+  },
+  "n_unique_items": 114,
+  "candidate_pool_note": "v1.0 candidate pool = all meaningful items minus items_owned_before, NOT gold-affordability-filtered -- see docs/adr/0020 Consequences."
+}

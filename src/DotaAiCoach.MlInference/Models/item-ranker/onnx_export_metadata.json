@@ -1,0 +1,64 @@
+{
+  "source_model_id": "item-ranker-v1.0-20260810T203622Z",
+  "source_metadata_ref": "./metadata.json",
+  "export_library": "onnxmltools",
+  "export_library_version": "1.16.0",
+  "onnx_ir_version": 4,
+  "onnx_opset": 15,
+  "onnx_opset_note": "lower than the LogReg exports' opset 17 -- onnxmltools' installed LightGBM converter supports at most opset 15 (verified live).",
+  "onnxruntime_version": "1.28.0",
+  "input_schema": {
+    "name": "input",
+    "shape": [
+      "batch",
+      6
+    ],
+    "dtype": "float32",
+    "feature_order": [
+      "minute",
+      "n_items_owned_before",
+      "avg_rank_tier",
+      "item_popularity_for_hero",
+      "item_popularity_for_hero_minute_bucket",
+      "item_global_popularity"
+    ],
+    "note": "One row per (state, candidate_item) pair, per item_ranker.py's build_candidate_rows/query_id grouping. avg_rank_tier falls back to the TRAIN split's median (see metadata.json's data.avg_rank_tier_fill) when unknown; the other features have no defined default in training (none observed missing in the dataset). Ml.Inference must ensure every feature in feature_order is always populated per candidate."
+  },
+  "output_schema": {
+    "name": "variable / Y (LightGBM ranker raw score)",
+    "shape": [
+      "batch",
+      1
+    ],
+    "dtype": "float32",
+    "note": "Raw LambdaMART relevance score, not a probability -- rank candidates per query_id by descending score, as ranker.predict() is used in item_ranker.py's evaluation."
+  },
+  "preprocessing_included_in_graph": "none required -- LightGBM ranker consumes already-numeric popularity-table features computed upstream in Python/would need to be replicated in Ml.Inference's Feature Engine (item_popularity_for_hero, item_popularity_for_hero_minute_bucket, item_global_popularity lookups from the trained popularity tables, which are NOT part of this ONNX graph -- see note below).",
+  "calibration_included_in_graph": "not applicable -- this is a ranking model, no probability calibration is fit for it in item_ranker.py.",
+  "popularity_tables_not_exported_note": "The Bayesian-shrunk popularity tables (tables['global'|'hero'|'hero_minute'] in model.pkl) are lookup dictionaries, not part of the LightGBM graph. Ml.Inference must load these tables (or an equivalent export of them) separately to compute 3 of the 5 input features per candidate before calling the ONNX model. This is out of scope for this export pass -- flagged for the live-wiring step.",
+  "validation": {
+    "test_inputs_description": "6 fixed rows: all-zero, large-positive, large-negative, mid-boundary, 2 representative random rows",
+    "n_test_rows": 6,
+    "max_abs_diff_score": 1.191656442856015e-06,
+    "tolerance": 0.001,
+    "passed": true,
+    "original_scores": [
+      -8.95623454264496,
+      2.4366312891856237,
+      -8.95623454264496,
+      2.9062244105788064,
+      -8.77778077081904,
+      -8.550504656051134
+    ],
+    "onnx_scores": [
+      -8.956233978271484,
+      2.436631917953491,
+      -8.956233978271484,
+      2.9062252044677734,
+      -8.777779579162598,
+      -8.550503730773926
+    ],
+    "latency_ms_per_single_row_inference": 0.07607200001075398,
+    "latency_note": "averaged over 200 calls, single row, CPUExecutionProvider, this dev machine -- rough sanity figure only, not a rigorous benchmark"
+  }
+}

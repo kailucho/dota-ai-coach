@@ -13,10 +13,10 @@ public partial class ProfileWindow : Window
 {
     private readonly ProfileViewModel _viewModel;
 
-    public ProfileWindow(IProfileSession session, string? detectedSteamId)
+    public ProfileWindow(IProfileSession session, ICoachSession coachSession, string? detectedSteamId)
     {
         InitializeComponent();
-        _viewModel = new ProfileViewModel(session, Dispatcher, detectedSteamId);
+        _viewModel = new ProfileViewModel(session, coachSession, Dispatcher, detectedSteamId);
         DataContext = _viewModel;
 
         Loaded += async (_, _) =>

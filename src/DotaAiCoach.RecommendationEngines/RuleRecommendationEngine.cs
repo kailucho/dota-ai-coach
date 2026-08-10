@@ -1,3 +1,4 @@
+using DotaAiCoach.Domain.MlInference;
 using DotaAiCoach.Domain.Recommendations;
 using DotaAiCoach.FeatureEngine;
 
@@ -14,12 +15,36 @@ public sealed class RuleRecommendationEngine
 {
     private readonly IReadOnlyList<IRule> _rules;
     private readonly TimeProvider _timeProvider;
+    private readonly IItemCatalog _items;
+    private readonly IItemRankPredictor? _itemRankPredictor;
+    private readonly IHeroItemPopularityLookup? _itemPopularity;
+    private readonly IWinProbabilityPredictor? _winProbabilityPredictor;
+    private int? _averageRankTier;
 
-    public RuleRecommendationEngine(IEnumerable<IRule> rules, TimeProvider? timeProvider = null)
+    public RuleRecommendationEngine(
+        IEnumerable<IRule> rules,
+        TimeProvider? timeProvider = null,
+        IItemCatalog? items = null,
+        IItemRankPredictor? itemRankPredictor = null,
+        IHeroItemPopularityLookup? itemPopularity = null,
+        IWinProbabilityPredictor? winProbabilityPredictor = null)
     {
         _rules = rules.ToArray();
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _items = items ?? ItemCatalog.Default;
+        _itemRankPredictor = itemRankPredictor;
+        _itemPopularity = itemPopularity;
+        _winProbabilityPredictor = winProbabilityPredictor;
     }
+
+    /// <summary>
+    /// Feeds the player's average rank tier (PUBLIC_PREFLIGHT, from the
+    /// separate player-profile lookup, never from GSI) into subsequent
+    /// Evaluate() calls' RuleContext. Mutable rather than constructor-only
+    /// because it becomes known asynchronously, after this engine already
+    /// exists (see ICoachSession.SetAverageRankTier / docs/ROADMAP.md).
+    /// </summary>
+    public void SetAverageRankTier(int? rankTier) => _averageRankTier = rankTier;
 
     public IReadOnlyList<Recommendation> Evaluate(LiveFeatureSet features)
     {
@@ -28,7 +53,15 @@ public sealed class RuleRecommendationEngine
             return Array.Empty<Recommendation>();
         }
 
-        var context = new RuleContext { Now = _timeProvider.GetUtcNow() };
+        var context = new RuleContext
+        {
+            Now = _timeProvider.GetUtcNow(),
+            Items = _items,
+            ItemRankPredictor = _itemRankPredictor,
+            ItemPopularity = _itemPopularity,
+            WinProbabilityPredictor = _winProbabilityPredictor,
+            AverageRankTier = _averageRankTier
+        };
         var results = new List<Recommendation>();
 
         foreach (var rule in _rules)

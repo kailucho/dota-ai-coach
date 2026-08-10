@@ -17,11 +17,13 @@ namespace DotaAiCoach.UiOverlay.ViewModels;
 public sealed class ProfileViewModel : INotifyPropertyChanged
 {
     private readonly IProfileSession _session;
+    private readonly ICoachSession _coachSession;
     private readonly Dispatcher _dispatcher;
 
-    public ProfileViewModel(IProfileSession session, Dispatcher dispatcher, string? detectedSteamId)
+    public ProfileViewModel(IProfileSession session, ICoachSession coachSession, Dispatcher dispatcher, string? detectedSteamId)
     {
         _session = session;
+        _coachSession = coachSession;
         _dispatcher = dispatcher;
         _session.Updated += OnUpdated;
         SteamIdInput = detectedSteamId ?? "";
@@ -52,6 +54,25 @@ public sealed class ProfileViewModel : INotifyPropertyChanged
 
         IsRefreshing = false;
         Apply(snapshot);
+
+        SaveSteamIdAndPropagateRank(snapshot);
+    }
+
+    /// <summary>
+    /// Persists the Steam ID locally (per user request: avoid re-typing
+    /// it every session) and feeds the freshly-fetched rank tier into the
+    /// live win-probability rule via CoachSession — only on an explicit,
+    /// successful refresh, never automatically, matching this window's
+    /// existing offline-first discipline.
+    /// </summary>
+    private void SaveSteamIdAndPropagateRank(PlayerProfileSnapshot snapshot)
+    {
+        if (!string.IsNullOrWhiteSpace(SteamIdInput))
+        {
+            new LocalPlayerSettings { SteamIdInput = SteamIdInput }.Save();
+        }
+
+        _coachSession.SetAverageRankTier(snapshot.RankTier);
     }
 
     /// <summary>

@@ -1,0 +1,207 @@
+{
+  "metadata": {
+    "source_model_id": "draft-baseline-v1.0-20260810T032042Z",
+    "feature_order": [
+      "hero_winrate_diff",
+      "matchup_advantage"
+    ],
+    "n_cases": 16,
+    "max_abs_diff_raw_vs_onnx_achieved": 4.702700440173402e-08,
+    "generated_at": "2026-08-10T04:24:57.462296+00:00",
+    "note": "expected_calibrated_output uses the model's own IsotonicRegression calibrator.pkl (fit on calib split) applied to expected_raw_output."
+  },
+  "cases": [
+    {
+      "case_name": "edge_all_zero_missing_feature_fill",
+      "description": "All features zero -- the missing-feature/zero-fill convention used at training and inference time (df.fillna(0.0)).",
+      "input": {
+        "hero_winrate_diff": 0.0,
+        "matchup_advantage": 0.0
+      },
+      "expected_raw_output": 0.7762486447723178,
+      "expected_calibrated_output": 0.5555555555555556,
+      "expected_onnx_output": 0.7762486338615417,
+      "raw_vs_onnx_abs_diff": 1.0910776060413241e-08
+    },
+    {
+      "case_name": "edge_extreme_large_positive",
+      "description": "All features set to an extreme large positive value (1e6) -- numerical-stability edge case.",
+      "input": {
+        "hero_winrate_diff": 1000000.0,
+        "matchup_advantage": 1000000.0
+      },
+      "expected_raw_output": 1.0,
+      "expected_calibrated_output": 1.0,
+      "expected_onnx_output": 1.0,
+      "raw_vs_onnx_abs_diff": 0.0
+    },
+    {
+      "case_name": "edge_extreme_large_negative",
+      "description": "All features set to an extreme large negative value (-1e6) -- numerical-stability edge case.",
+      "input": {
+        "hero_winrate_diff": -1000000.0,
+        "matchup_advantage": -1000000.0
+      },
+      "expected_raw_output": 0.0,
+      "expected_calibrated_output": 0.0,
+      "expected_onnx_output": 0.0,
+      "raw_vs_onnx_abs_diff": 0.0
+    },
+    {
+      "case_name": "edge_mid_boundary_0_5",
+      "description": "All features set to a boundary-ish mid value (0.5) -- boundary-value edge case.",
+      "input": {
+        "hero_winrate_diff": 0.5,
+        "matchup_advantage": 0.5
+      },
+      "expected_raw_output": 0.9999999999999465,
+      "expected_calibrated_output": 1.0,
+      "expected_onnx_output": 1.0,
+      "raw_vs_onnx_abs_diff": 5.3512749786932545e-14
+    },
+    {
+      "case_name": "representative_random_row_1",
+      "description": "Representative random row 1 (uniform[-1000, 1000], seed 42) -- typical-magnitude sanity case.",
+      "input": {
+        "hero_winrate_diff": -250.91976928710938,
+        "matchup_advantage": 901.4285888671875
+      },
+      "expected_raw_output": 1.0,
+      "expected_calibrated_output": 1.0,
+      "expected_onnx_output": 1.0,
+      "raw_vs_onnx_abs_diff": 0.0
+    },
+    {
+      "case_name": "representative_random_row_2",
+      "description": "Representative random row 2 (uniform[-1000, 1000], seed 42) -- typical-magnitude sanity case.",
+      "input": {
+        "hero_winrate_diff": 463.9878845214844,
+        "matchup_advantage": 197.3169708251953
+      },
+      "expected_raw_output": 1.0,
+      "expected_calibrated_output": 1.0,
+      "expected_onnx_output": 1.0,
+      "raw_vs_onnx_abs_diff": 0.0
+    },
+    {
+      "case_name": "real_val_row_0",
+      "description": "Real row 0 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": 0.029020196802000298,
+        "matchup_advantage": -0.03975532688118921
+      },
+      "expected_raw_output": 0.3391483542481533,
+      "expected_calibrated_output": 0.5211267605633803,
+      "expected_onnx_output": 0.3391483426094055,
+      "raw_vs_onnx_abs_diff": 1.1638747798858873e-08
+    },
+    {
+      "case_name": "real_val_row_1",
+      "description": "Real row 1 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": 0.003169391891757578,
+        "matchup_advantage": -0.04817232022065221
+      },
+      "expected_raw_output": 0.2197591719900501,
+      "expected_calibrated_output": 0.46774133324254263,
+      "expected_onnx_output": 0.21975919604301453,
+      "raw_vs_onnx_abs_diff": 2.4052964425758105e-08
+    },
+    {
+      "case_name": "real_val_row_2",
+      "description": "Real row 2 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": -0.03664723136093573,
+        "matchup_advantage": -0.03846928842520159
+      },
+      "expected_raw_output": 0.2688363249943738,
+      "expected_calibrated_output": 0.5211267605633803,
+      "expected_onnx_output": 0.2688363194465637,
+      "raw_vs_onnx_abs_diff": 5.547810100203776e-09
+    },
+    {
+      "case_name": "real_val_row_3",
+      "description": "Real row 3 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": 0.008368932139136143,
+        "matchup_advantage": -0.01670827390359242
+      },
+      "expected_raw_output": 0.6028613054580141,
+      "expected_calibrated_output": 0.5217391304347826,
+      "expected_onnx_output": 0.6028612852096558,
+      "raw_vs_onnx_abs_diff": 2.0248358323371463e-08
+    },
+    {
+      "case_name": "real_val_row_4",
+      "description": "Real row 4 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": -0.01045569939685631,
+        "matchup_advantage": 0.0017119272893347803
+      },
+      "expected_raw_output": 0.7807449943649025,
+      "expected_calibrated_output": 0.5555555555555556,
+      "expected_onnx_output": 0.7807449698448181,
+      "raw_vs_onnx_abs_diff": 2.4520084407342324e-08
+    },
+    {
+      "case_name": "real_val_row_5",
+      "description": "Real row 5 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": -0.006235701393862314,
+        "matchup_advantage": 0.008373006298672436
+      },
+      "expected_raw_output": 0.838305090253765,
+      "expected_calibrated_output": 0.5555555555555556,
+      "expected_onnx_output": 0.8383051156997681,
+      "raw_vs_onnx_abs_diff": 2.5446003082407742e-08
+    },
+    {
+      "case_name": "real_val_row_6",
+      "description": "Real row 6 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": -0.02031096728390186,
+        "matchup_advantage": -0.02035083322968345
+      },
+      "expected_raw_output": 0.5127310987864121,
+      "expected_calibrated_output": 0.5217391304347826,
+      "expected_onnx_output": 0.5127310752868652,
+      "raw_vs_onnx_abs_diff": 2.3499546863980925e-08
+    },
+    {
+      "case_name": "real_val_row_7",
+      "description": "Real row 7 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": 0.012734211282335983,
+        "matchup_advantage": -0.003614046904485191
+      },
+      "expected_raw_output": 0.7561823851476782,
+      "expected_calibrated_output": 0.5555555555555556,
+      "expected_onnx_output": 0.7561824321746826,
+      "raw_vs_onnx_abs_diff": 4.702700440173402e-08
+    },
+    {
+      "case_name": "real_val_row_8",
+      "description": "Real row 8 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": 0.04915584971970566,
+        "matchup_advantage": -0.02537636076283223
+      },
+      "expected_raw_output": 0.5525931833421672,
+      "expected_calibrated_output": 0.5217391304347826,
+      "expected_onnx_output": 0.5525931715965271,
+      "raw_vs_onnx_abs_diff": 1.1745640127180934e-08
+    },
+    {
+      "case_name": "real_val_row_9",
+      "description": "Real row 9 from val.parquet, features recomputed via compute_draft_features (deterministic, first 10 rows by positional index).",
+      "input": {
+        "hero_winrate_diff": -0.024126122394160787,
+        "matchup_advantage": -0.0012465493854645349
+      },
+      "expected_raw_output": 0.7371358034624045,
+      "expected_calibrated_output": 0.5555555555555556,
+      "expected_onnx_output": 0.7371357679367065,
+      "raw_vs_onnx_abs_diff": 3.5525697938965095e-08
+    }
+  ]
+}

@@ -86,11 +86,28 @@ class OpenDotaClient:
     def _get_with_retry(self, endpoint: str, params: dict[str, Any] | None, max_attempts: int = 5) -> requests.Response:
         """Retries on 429 with exponential backoff — the observed real-world
         signal that our local token bucket is still too optimistic relative
-        to OpenDota's actual (unauthenticated, headerless) limit."""
+        to OpenDota's actual (unauthenticated, headerless) limit.
+
+        Also retries on requests.exceptions.RequestException (connection
+        errors, read timeouts, etc.) — found live during the ADR-0021
+        multi-patch acquisition run: an unhandled requests.exceptions.ReadTimeout
+        (a transient network issue, not a 429) crashed the whole run and lost
+        in-flight progress on that single match. A single flaky network call
+        must not kill a run that's already fetched thousands of matches --
+        same principle acquire.py's fetch_parsed_matches already applies at
+        the per-match level, but the low-level HTTP retry itself was not yet
+        hardened against non-429 transient failures."""
         backoff = 5.0
         for attempt in range(max_attempts):
             self._rate_limiter.wait_for_slot()
-            response = self._session.get(f"{OPENDOTA_BASE_URL}{endpoint}", params=params, timeout=30)
+            try:
+                response = self._session.get(f"{OPENDOTA_BASE_URL}{endpoint}", params=params, timeout=30)
+            except requests.exceptions.RequestException as exc:
+                if attempt == max_attempts - 1:
+                    raise
+                time.sleep(backoff)
+                backoff *= 2
+                continue
             if response.status_code != 429:
                 response.raise_for_status()
                 return response

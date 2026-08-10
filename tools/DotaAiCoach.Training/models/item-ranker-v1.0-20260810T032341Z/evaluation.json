@@ -1,0 +1,73 @@
+{
+  "baselines": {
+    "global_popularity_unconditional_rule": {
+      "ndcg@3": 0.18843064924534922,
+      "ndcg@5": 0.2292567860217407,
+      "mrr": 0.23295049965959994,
+      "n_queries": 31391,
+      "n_queries_with_relevant_candidate": 31391
+    },
+    "hero_popularity_bayesian_shrunk": {
+      "ndcg@3": 0.38803970258127146,
+      "ndcg@5": 0.4371257018965426,
+      "mrr": 0.4155311968382648,
+      "n_queries": 31391,
+      "n_queries_with_relevant_candidate": 31391
+    }
+  },
+  "model": {
+    "lightgbm_lambdamart": {
+      "ndcg@3": 0.5245827851562362,
+      "ndcg@5": 0.5681694813151428,
+      "mrr": 0.5420111758737081,
+      "n_queries": 31391,
+      "n_queries_with_relevant_candidate": 31391
+    }
+  },
+  "test_metrics_touched_once": {
+    "ndcg@3": 0.5236287822978966,
+    "ndcg@5": 0.5668877320909748,
+    "mrr": 0.5394514088566705,
+    "n_queries": 31168,
+    "n_queries_with_relevant_candidate": 31168
+  },
+  "segments_by_minute_bucket": {
+    "early": {
+      "ndcg@3": 0.6916605147904468,
+      "ndcg@5": 0.7306341182893296,
+      "mrr": 0.6896089890671877,
+      "n_queries": 12857,
+      "n_queries_with_relevant_candidate": 12857
+    },
+    "mid": {
+      "ndcg@3": 0.44621994996076414,
+      "ndcg@5": 0.49189438743802716,
+      "mrr": 0.4724458587914531,
+      "n_queries": 11104,
+      "n_queries_with_relevant_candidate": 11104
+    },
+    "late": {
+      "ndcg@3": 0.34313255496541417,
+      "ndcg@5": 0.39031479073868997,
+      "mrr": 0.3748133651710249,
+      "n_queries": 7207,
+      "n_queries_with_relevant_candidate": 7207
+    }
+  },
+  "segments_by_patch": {
+    "60": {
+      "ndcg@3": 0.5236287822978966,
+      "ndcg@5": 0.5668877320909748,
+      "mrr": 0.5394514088566705,
+      "n_queries": 31168,
+      "n_queries_with_relevant_candidate": 31168
+    }
+  },
+  "domain_sanity_check": {
+    "ranker_vs_baseline1_top1_agreement_rate": 0.4638732032854209,
+    "chance_rate": 0.008771929824561403,
+    "passed": true
+  },
+  "n_unique_items": 114,
+  "candidate_pool_note": "v1.0 candidate pool = all meaningful items minus items_owned_before, NOT gold-affordability-filtered -- see docs/adr/0020 Consequences."
+}

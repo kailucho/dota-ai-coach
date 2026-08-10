@@ -1,0 +1,78 @@
+{
+  "model_id": "draft-baseline-v1.0-20260810T032042Z",
+  "model_name": "draft-baseline",
+  "version": {
+    "major": 1,
+    "minor": 0
+  },
+  "training_run_id": "20260810T032042Z",
+  "data": {
+    "dataset_id": "draft-ranked-ad-2760-20260810",
+    "features_version": "1.0",
+    "record_counts": {
+      "train": 1656,
+      "val": 414,
+      "calib": 276,
+      "test": 414
+    },
+    "split_cutoffs": {
+      "train": {
+        "min_start_time": 1756691873,
+        "max_start_time": 1778064684,
+        "match_count": 1656
+      },
+      "val": {
+        "min_start_time": 1778064689,
+        "max_start_time": 1781345578,
+        "match_count": 414
+      },
+      "calib": {
+        "min_start_time": 1781345559,
+        "max_start_time": 1784242562,
+        "match_count": 276
+      },
+      "test": {
+        "min_start_time": 1784242567,
+        "max_start_time": 1784243642,
+        "match_count": 414
+      }
+    }
+  },
+  "code": {
+    "git_commit": "8bae0b1328fea67912a1af99170f8ae12f572cff"
+  },
+  "hyperparameters": {
+    "logistic_regression": {
+      "max_iter": 2000,
+      "random_state": 42,
+      "C": 0.01,
+      "C_search_candidates": [
+        1.0,
+        0.1,
+        0.01,
+        0.001
+      ],
+      "C_search_val_auc": {
+        "1.0": 0.4957542866499801,
+        "0.1": 0.4953800088890967,
+        "0.01": 0.496081779690753,
+        "0.001": 0.49030386675711707
+      }
+    },
+    "matchup_prior_strength": 10.0
+  },
+  "seeds": {
+    "random_seed": 42
+  },
+  "libraries": {
+    "python": "3.11.1",
+    "scikit-learn": "1.9.0",
+    "pandas": "3.0.5",
+    "numpy": "2.4.6"
+  },
+  "fairplay": {
+    "contains_postgame_only_features": false,
+    "note": "Hero picks, patch, and match outcome are all PublicPreflight/LiveAllowed-eligible data (draft is visible to both teams before the match starts). Not wired into the live app in this pass."
+  },
+  "evaluation_ref": "./evaluation.json"
+}

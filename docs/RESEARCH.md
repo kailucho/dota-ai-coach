@@ -126,6 +126,46 @@ highest-priority items to confirm against a real client capture:
    slice; flagged in `HeroSnapshot`'s XML doc for whoever builds a
    level-progress feature on it next.
 
+## `draft` block — investigated and closed (does not populate in Ranked All Draft)
+
+Investigated 2026-08-10 in response to a request for enemy-hero-aware
+item recommendations. Community source
+([antonpup/Dota2GSI](https://github.com/antonpup/Dota2GSI)'s
+`Nodes/Draft.cs` / `Nodes/DraftProvider/DraftDetails.cs`) documents a
+`draft.team{N}.pick{N}_id`/`pick{N}_class` shape, and a `"draft":"1"` data
+flag was added to a capture-only `.cfg`
+(`gamestate_integration_dota_ai_coach_capture.cfg`) to verify it live.
+
+**Real-capture result: the `draft` block was present but stayed `{}`
+(empty) across all 252 captured payloads of an entire real Ranked All
+Draft match**, through `HERO_SELECTION`, `STRATEGY_TIME`,
+`TEAM_SHOWCASE`, and `PRE_GAME` — never once populated with pick data.
+This directly contradicts what the library's parser code alone would
+suggest, which is why this project's `dota-gsi` rule requires verifying
+against a live capture, not just source code, before treating a field as
+usable.
+
+**Working theory** (not independently confirmed, stated as a theory):
+`draft.*` likely only populates in Captain's Mode (turn-based picks/bans
+with a designated captain), not Ranked All Draft (simultaneous picks, no
+bans) — the only game mode this project treats as valid "ranked" data
+(`RANKED_GAME_MODE = 22`, per `dota-data`'s game-mode-22-is-All-Draft
+correction). Since Ranked All Draft is the only mode this project's live
+recommendation path is meant to support, this distinction doesn't change
+the practical conclusion below regardless of whether the theory is
+correct.
+
+**Conclusion: there is no legitimate GSI-based path to knowing the enemy
+team's hero picks during a Ranked All Draft match, at any point in the
+match.** This closes out a specific user request (item recommendations
+that react to known enemy heroes) as not implementable via GSI — the
+only remaining legitimate path per `dota-fairplay` would be Computer
+Vision reading the player's own visible top-hero-bar/scoreboard (not yet
+built in this project — see `docs/ROADMAP.md`'s deferred Fase 9). Do not
+re-attempt a `draft`-block-based implementation without first re-verifying
+with a fresh live capture, in case a future Dota patch changes this
+behavior.
+
 ## OpenDota / STRATZ / Steam OpenID
 
 Per this iteration's scope (Fase 0 + Fase 1 + vertical slice = GSI-only

@@ -30,7 +30,9 @@ public enum ReasonCode
     LowHealthRisk,
     LateGameDeathRisk,
     LevelThresholdReached,
-    ItemThresholdReached
+    ItemThresholdReached,
+    MlWinProbabilityEstimate,
+    EnemyTeamAheadOnKills
 }
 
 public sealed record RecommendationAlternative(
@@ -66,6 +68,16 @@ public sealed record Recommendation
 
     /// <summary>Expanded-mode-only explanation. Never shown in the live message stream.</summary>
     public string? DetailText { get; init; }
+
+    /// <summary>
+    /// Set only by NextItemRule: the full, display-ready early/mid/late
+    /// item plan (see ItemPlan) for the overlay's always-visible panel.
+    /// Null for every other rule. Kept on Recommendation rather than a
+    /// separate engine output so RuleRecommendationEngine's shape (one
+    /// list of Recommendations) doesn't need a second parallel return
+    /// value just for this one rule.
+    /// </summary>
+    public ItemPlan? ItemPlan { get; init; }
 }
 
 /// <summary>The filtered, budgeted subset of Recommendations actually surfaced live — see LiveMessageBudget.</summary>
@@ -75,3 +87,26 @@ public sealed record LiveMessage(
     string Text,
     string MessageKey,
     DateTimeOffset IssuedAt);
+
+/// <summary>
+/// One phase's suggested item, display-ready (name already resolved, not
+/// just an id). ItemId (e.g. "item_tango", GSI's own naming) is kept
+/// alongside the display name so the overlay can resolve an icon image
+/// without RecommendationEngines needing to know anything about icons —
+/// icon resolution is a UI concern, per dota-architecture.
+/// </summary>
+public sealed record ItemPlanEntry(string PhaseLabel, string ItemDisplayName, string ItemId);
+
+/// <summary>
+/// The always-visible early/mid/late item plan — deliberately NOT part of
+/// the cooldown-gated LiveMessage stream (see dota-live-coach: live
+/// messages stay short single-action fragments, never a multi-item
+/// plan). Built directly from NextItemRule's output every recompute, so
+/// it always reflects the current state without needing its own
+/// anti-spam gating — it's a persistent panel, not a transient alert.
+/// Empty when NextItemRule has nothing to say (e.g. feed not usable).
+/// </summary>
+public sealed record ItemPlan(IReadOnlyList<ItemPlanEntry> Entries)
+{
+    public static readonly ItemPlan Empty = new(Array.Empty<ItemPlanEntry>());
+}

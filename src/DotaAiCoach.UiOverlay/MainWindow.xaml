@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Dota AI Coach"
-        Width="260" Height="360"
+        Width="300"
         Left="24" Top="24"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -14,7 +14,8 @@
         ShowInTaskbar="False"
         ShowActivated="False"
         ResizeMode="NoResize"
-        SizeToContent="Height">
+        SizeToContent="Height"
+        MaxHeight="620">
     <!--
         Positioned top-left with a fixed offset, deliberately away from
         the minimap (bottom-left), inventory/ability bar (bottom-center),
@@ -25,7 +26,23 @@
     -->
     <Border Background="#CC101014" CornerRadius="8" Padding="14" BorderBrush="#33FFFFFF" BorderThickness="1">
         <StackPanel>
-            <TextBlock Text="DOTA AI COACH" Foreground="#FFB0B0B0" FontSize="11" FontWeight="Bold" Margin="0,0,0,8" />
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="DOTA AI COACH" Foreground="#FFB0B0B0" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
+                <!--
+                    Hides to the system tray (see App.xaml.cs's NotifyIcon)
+                    rather than a normal Windows minimize, since this
+                    window has no taskbar presence by design (dota-overlay)
+                    — a real WindowState.Minimized would have no way back.
+                -->
+                <Button Grid.Column="1" Content="_" Click="OnMinimizeClick"
+                        Width="22" Height="20" Padding="0" FontSize="12" FontWeight="Bold"
+                        Foreground="#FFB0B0B0" Background="Transparent" BorderThickness="0"
+                        ToolTip="Minimize to tray" />
+            </Grid>
 
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
@@ -50,29 +67,63 @@
                 <Run Text="Buyback: " /><Run Text="{Binding BuybackText, Mode=OneWay}" />
             </TextBlock>
 
-            <ItemsControl ItemsSource="{Binding ItemNames}" Margin="0,0,0,8">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding}" Foreground="#FF9DBFD1" FontSize="11" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <Rectangle Height="1" Fill="#22FFFFFF" Margin="0,0,0,8" />
-
-            <ItemsControl ItemsSource="{Binding Messages}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Margin="0,0,0,4" Padding="6,4" CornerRadius="4" Background="#22FFFFFF">
-                            <TextBlock Text="{Binding Text}" Foreground="#FFFFE9B0" FontSize="13" TextWrapping="Wrap" />
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <!--
+                Always-visible item plan, grouped by phase (Early/Mid/
+                Late/Situational) with a grid of item icons per phase —
+                mirrors Dota's own in-game item guide layout, per the
+                user's explicit request. Deliberately NOT part of the
+                Messages feed above: per dota-live-coach, the live message
+                stream stays short single-action fragments with
+                cooldown-based anti-spam, but the user explicitly asked to
+                always see the full build for the whole game, not just the
+                currently-relevant phase. This panel has no cooldown/
+                budget gating — it just reflects current state every
+                recompute.
+            -->
+            <StackPanel>
+                <Rectangle Height="1" Fill="#22FFFFFF" Margin="0,4,0,8" />
+                <!--
+                    MaxHeight + internal scroll: 4 phases x up to 6 items
+                    each can exceed screen height on smaller monitors: this
+                    keeps the window itself from growing past the screen
+                    while still showing everything via scroll, rather than
+                    silently clipping content off the bottom edge.
+                -->
+                <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding ItemPlanGroups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding PhaseLabel}" Foreground="#FFB0B0B0" FontSize="11" FontWeight="Bold" Margin="0,0,0,6" />
+                                    <ItemsControl ItemsSource="{Binding Items}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Width="42" Height="30" Background="#22000000" CornerRadius="3"
+                                                        Margin="0,0,4,4" BorderBrush="#33FFFFFF" BorderThickness="1"
+                                                        ToolTip="{Binding ItemDisplayName}">
+                                                    <Image Source="{Binding IconImage}" Stretch="UniformToFill" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
 
             <TextBlock Text="{Binding FeedStatusText}" Foreground="#FF777777" FontSize="10" Margin="0,8,0,0" />
 
-            <Button Content="Profile" Click="OnProfileClick" Margin="0,8,0,0" Padding="6,3" HorizontalAlignment="Left" />
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <Button Content="Profile" Click="OnProfileClick" Padding="6,3" />
+                <Button Content="Ask LLM" Click="OnAskLlmClick" Padding="6,3" Margin="8,0,0,0" />
+            </StackPanel>
         </StackPanel>
     </Border>
 </Window>
