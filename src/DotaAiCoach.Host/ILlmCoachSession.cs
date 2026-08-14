@@ -20,7 +20,6 @@ public interface ILlmCoachSession
     Task<ScoreboardExtractionResult> ExtractScoreboardAsync(
         byte[] imageBytes,
         string mediaType,
-        IReadOnlyList<string> expectedEnemyHeroes,
         CancellationToken ct);
 
     Task<LlmSituationAdvice> AskForAdviceAsync(ManualSituationInput input, CancellationToken ct);

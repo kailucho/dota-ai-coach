@@ -18,7 +18,7 @@ public class OpenAiScoreboardExtractorTests
             }
             """;
 
-        var result = OpenAiScoreboardExtractor.ParseResult(json, ["Anti-Mage", "Invoker"]);
+        var result = OpenAiScoreboardExtractor.ParseResult(json);
 
         result.Enemies.Should().HaveCount(2);
         result.Enemies[0].Hero.Should().Be("Anti-Mage");
@@ -30,56 +30,50 @@ public class OpenAiScoreboardExtractorTests
     }
 
     [Fact]
-    public void ParseResult_drops_heroes_not_on_the_expected_list()
+    public void ParseResult_reports_every_hero_the_model_returns_with_no_filtering()
     {
+        // No "expected enemies" hint exists anymore -- the extractor
+        // reports whatever the model reads, as-is.
         var json = """
             {
               "enemy_status": [
                 { "hero": "Anti-Mage", "level": 8, "kda": null },
-                { "hero": "Some Unexpected Hero", "level": 5, "kda": null }
+                { "hero": "Some Other Hero", "level": 5, "kda": null }
               ]
             }
             """;
 
-        var result = OpenAiScoreboardExtractor.ParseResult(json, ["Anti-Mage"]);
+        var result = OpenAiScoreboardExtractor.ParseResult(json);
 
-        result.Enemies.Should().ContainSingle();
-        result.Enemies[0].Hero.Should().Be("Anti-Mage");
+        result.Enemies.Should().HaveCount(2);
+        result.Enemies.Select(e => e.Hero).Should().BeEquivalentTo(["Anti-Mage", "Some Other Hero"]);
     }
 
     [Fact]
-    public void ParseResult_returns_raw_hero_name_when_no_expected_list_was_given()
+    public void ParseResult_skips_entries_with_a_blank_hero_name()
     {
         var json = """
             {
               "enemy_status": [
+                { "hero": "", "level": 8, "kda": null },
                 { "hero": "Anti-Mage", "level": 8, "kda": null }
               ]
             }
             """;
 
-        var result = OpenAiScoreboardExtractor.ParseResult(json, []);
+        var result = OpenAiScoreboardExtractor.ParseResult(json);
 
         result.Enemies.Should().ContainSingle();
         result.Enemies[0].Hero.Should().Be("Anti-Mage");
     }
 
-    [Theory]
-    [InlineData("anti-mage", "Anti-Mage")]
-    [InlineData("ANTI-MAGE", "Anti-Mage")]
-    [InlineData("Anti-Mage (enemy)", "Anti-Mage")]
-    public void NormalizeHero_matches_case_insensitively_and_by_substring(string raw, string expected)
-    {
-        var normalized = OpenAiScoreboardExtractor.NormalizeHero(raw, [expected]);
-
-        normalized.Should().Be(expected);
-    }
-
     [Fact]
-    public void NormalizeHero_returns_null_when_nothing_matches()
+    public void ParseResult_returns_an_empty_list_when_no_enemies_are_detected()
     {
-        var normalized = OpenAiScoreboardExtractor.NormalizeHero("Completely Different Hero", ["Anti-Mage", "Invoker"]);
+        var json = """{ "enemy_status": [] }""";
 
-        normalized.Should().BeNull();
+        var result = OpenAiScoreboardExtractor.ParseResult(json);
+
+        result.Enemies.Should().BeEmpty();
     }
 }

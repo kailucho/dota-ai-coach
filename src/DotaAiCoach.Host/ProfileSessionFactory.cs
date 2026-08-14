@@ -24,6 +24,10 @@ public static class ProfileSessionFactory
         // /request/{jobId}) — these calls are deliberately never routed
         // through the caching decorator, since a parse trigger only makes
         // sense as a live call (see CachingOpenDotaClient.PostAsync).
-        return new ProfileSession(service, httpClient, options);
+        // cachingClient is passed separately for GetCurrentGamePatchAsync,
+        // which — unlike the parse flow — benefits from disk caching
+        // (the current patch changes rarely, no reason to hit the network
+        // every session).
+        return new ProfileSession(service, httpClient, cachingClient, options);
     }
 }

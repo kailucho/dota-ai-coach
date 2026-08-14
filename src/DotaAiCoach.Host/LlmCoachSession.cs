@@ -23,7 +23,6 @@ public sealed class LlmCoachSession : ILlmCoachSession
     public async Task<ScoreboardExtractionResult> ExtractScoreboardAsync(
         byte[] imageBytes,
         string mediaType,
-        IReadOnlyList<string> expectedEnemyHeroes,
         CancellationToken ct)
     {
         if (_extractor is null)
@@ -32,7 +31,7 @@ public sealed class LlmCoachSession : ILlmCoachSession
                 "No OPENAI_API_KEY configured. Set the environment variable and restart the app.");
         }
 
-        return await _extractor.ExtractAsync(imageBytes, mediaType, expectedEnemyHeroes, ct);
+        return await _extractor.ExtractAsync(imageBytes, mediaType, ct);
     }
 
     public async Task<LlmSituationAdvice> AskForAdviceAsync(ManualSituationInput input, CancellationToken ct)

@@ -1,4 +1,5 @@
 using DotaAiCoach.Domain.LlmCoach;
+using DotaAiCoach.Domain.Recommendations;
 using DotaAiCoach.LlmCoach;
 using FluentAssertions;
 
@@ -6,10 +7,15 @@ namespace DotaAiCoach.LlmCoach.Tests;
 
 public class SituationLogWriterTests
 {
+    private static ItemPlan SampleItemPlan() => new(
+    [
+        new ItemPlanEntry("Late", "Black King Bar", "item_black_king_bar"),
+    ]);
+
     private static ManualSituationInput SampleInput() => new(
         MinuteOfMatch: 15,
         OwnHero: "Pudge",
-        OwnKda: "3/1/5",
+        OwnKda: new ScoreboardKda(3, 1, 5),
         EnemyScoreboard: new ScoreboardExtractionResult(
         [
             new EnemyScoreboardEntry("Anti-Mage", 8, new ScoreboardKda(2, 1, 3)),
@@ -24,7 +30,7 @@ public class SituationLogWriterTests
         var writer = new SituationLogWriter(directory);
 
         var input = SampleInput();
-        var advice = new LlmSituationAdvice("Compra BKB", DateTimeOffset.UtcNow, "gpt-5");
+        var advice = new LlmSituationAdvice(SampleItemPlan(), DateTimeOffset.UtcNow, "gpt-5");
 
         await writer.AppendAsync(input, advice, CancellationToken.None);
         await writer.AppendAsync(input, advice, CancellationToken.None);
@@ -33,7 +39,7 @@ public class SituationLogWriterTests
         var lines = await File.ReadAllLinesAsync(logFile);
 
         lines.Should().HaveCount(2);
-        lines[0].Should().Contain("Pudge").And.Contain("Compra BKB").And.Contain("Anti-Mage");
+        lines[0].Should().Contain("Pudge").And.Contain("Black King Bar").And.Contain("Anti-Mage");
     }
 
     [Fact]
@@ -48,7 +54,7 @@ public class SituationLogWriterTests
         var writer = new SituationLogWriter(directory);
 
         var input = SampleInput();
-        var advice = new LlmSituationAdvice("test", DateTimeOffset.UtcNow, "gpt-5");
+        var advice = new LlmSituationAdvice(SampleItemPlan(), DateTimeOffset.UtcNow, "gpt-5");
 
         var act = async () => await writer.AppendAsync(input, advice, CancellationToken.None);
 

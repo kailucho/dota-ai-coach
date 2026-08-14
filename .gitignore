@@ -11,6 +11,11 @@ obj/
 Thumbs.db
 .DS_Store
 
+## Secrets / environment
+.env
+.env.*
+!.env.example
+
 ## Claude Code session state (ephemeral, per-process)
 .claude/scheduled_tasks.lock
 

@@ -94,8 +94,15 @@ public sealed record LiveMessage(
 /// alongside the display name so the overlay can resolve an icon image
 /// without RecommendationEngines needing to know anything about icons —
 /// icon resolution is a UI concern, per dota-architecture.
+///
+/// PriorityPercent (0-100) is the LLM-explained advisor's confidence that
+/// this item is the right buy right now, mirroring the win-rate-by-item
+/// percentages shown on Dota's own post-game item guide — it is NOT a
+/// win-rate statistic, just a relative priority signal from the same
+/// structured recommendation. Null for the rule/ML-driven ItemPlan path,
+/// which doesn't produce this today.
 /// </summary>
-public sealed record ItemPlanEntry(string PhaseLabel, string ItemDisplayName, string ItemId);
+public sealed record ItemPlanEntry(string PhaseLabel, string ItemDisplayName, string ItemId, int? PriorityPercent = null);
 
 /// <summary>
 /// The always-visible early/mid/late item plan — deliberately NOT part of

@@ -1,4 +1,5 @@
 using System.ClientModel;
+using System.IO;
 using System.Text.Json;
 using DotaAiCoach.Domain.LlmCoach;
 using OpenAI;
@@ -13,7 +14,11 @@ namespace DotaAiCoach.LlmCoach;
 /// the same prompt/schema shape as the reference project
 /// dota-plus-free's packages/server/src/routes/tickExtract.ts (Responses
 /// API + forced tool call there; Chat Completions + response_format
-/// json_schema here — same guarantee, different SDK surface).
+/// json_schema here — same guarantee, different SDK surface). Unlike
+/// tickExtract.ts, no "expected enemies" hint is sent — the extractor
+/// reports every enemy hero it can read, as-is. The player's own KDA is
+/// never asked of the image — it's already known live from GSI (see
+/// ManualSituationInput.OwnKda).
 /// </summary>
 public sealed class OpenAiScoreboardExtractor : IScoreboardExtractor
 {
@@ -73,34 +78,33 @@ public sealed class OpenAiScoreboardExtractor : IScoreboardExtractor
     public async Task<ScoreboardExtractionResult> ExtractAsync(
         byte[] imageBytes,
         string mediaType,
-        IReadOnlyList<string> expectedEnemyHeroes,
         CancellationToken ct)
     {
-        var system = """
-            Eres un extractor de datos de Dota 2. Recibiras un screenshot
-            de la tabla de heroes (scoreboard) de una partida en curso.
+        await SaveDebugImageAsync(imageBytes, mediaType, ct);
 
-            Devuelve SOLO para los heroes ENEMIGOS de la lista de entrada:
-            - hero: igual al nombre en la lista.
+        const string system = """
+            Eres un extractor de datos de Dota 2. Recibiras un screenshot
+            de la tabla de heroes (scoreboard) de una partida en curso,
+            con ambos equipos.
+
+            Devuelve un elemento en enemy_status por cada heroe ENEMIGO
+            visible en la imagen (nunca incluyas heroes de mi propio
+            equipo, solo del equipo contrario):
+            - hero: el nombre del heroe tal como aparece en pantalla.
             - level: columna "LVL". Si no es legible, usa null.
             - kda {k,d,a}: columnas "K","D","A" en ese orden. Si no son
-              legibles con claridad, usa null para todo el objeto kda -- no
-              adivines.
+              legibles con claridad, usa null para todo el objeto kda --
+              no adivines.
 
-            Limita la salida a los heroes de la lista de entrada
-            (normaliza mayusculas/minusculas). No inventes heroes que no
-            esten en la lista.
+            No inventes heroes ni datos que no esten realmente visibles
+            en la imagen.
             """;
-
-        var enemiesHint = expectedEnemyHeroes.Count > 0
-            ? $"Enemigos esperados (restringe la salida a estos): {string.Join(", ", expectedEnemyHeroes)}"
-            : "No se proporciono lista de enemigos esperados; extrae todos los heroes que veas en la mitad enemiga de la tabla.";
 
         var messages = new ChatMessage[]
         {
             ChatMessage.CreateSystemMessage(system),
             ChatMessage.CreateUserMessage(
-                ChatMessageContentPart.CreateTextPart($"Extrae los datos del screenshot.\n{enemiesHint}"),
+                ChatMessageContentPart.CreateTextPart("Extrae los datos del screenshot."),
                 ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(imageBytes), mediaType)),
         };
 
@@ -115,24 +119,53 @@ public sealed class OpenAiScoreboardExtractor : IScoreboardExtractor
         var response = await _client.CompleteChatAsync(messages, options, ct);
         var json = response.Value.Content[0].Text;
 
-        return ParseResult(json, expectedEnemyHeroes);
+        return ParseResult(json);
     }
 
-    internal static ScoreboardExtractionResult ParseResult(string json, IReadOnlyList<string> expectedEnemyHeroes)
+    /// <summary>
+    /// Saves every image sent for extraction to
+    /// %LocalAppData%\DotaAiCoach\llm-situations\images\, timestamped, so
+    /// the player can inspect exactly what was sent to OpenAI when
+    /// debugging a bad extraction or an API error -- saved BEFORE the
+    /// API call, so a request failure (e.g. an invalid key) still leaves
+    /// the image on disk to inspect. Best-effort: never blocks the
+    /// actual extraction call.
+    /// </summary>
+    private static async Task SaveDebugImageAsync(byte[] imageBytes, string mediaType, CancellationToken ct)
+    {
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "DotaAiCoach", "llm-situations", "images");
+            Directory.CreateDirectory(directory);
+
+            var extension = mediaType switch
+            {
+                "image/jpeg" => "jpg",
+                "image/bmp" => "bmp",
+                "image/gif" => "gif",
+                _ => "png",
+            };
+            var fileName = $"{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfffZ}.{extension}";
+            await File.WriteAllBytesAsync(Path.Combine(directory, fileName), imageBytes, ct);
+        }
+        catch
+        {
+            // Debug-only convenience -- never a reason to fail the
+            // player-facing extraction/recommendation flow.
+        }
+    }
+
+    internal static ScoreboardExtractionResult ParseResult(string json)
     {
         using var doc = JsonDocument.Parse(json);
-        var enemyStatus = doc.RootElement.GetProperty("enemy_status");
 
-        // Normalize each returned hero name against the expected list
-        // (case-insensitive exact match, then substring match), mirroring
-        // tickExtract.ts's normalization -- and drop entries that don't
-        // match anything on the expected list, when one was provided.
         var entries = new List<EnemyScoreboardEntry>();
-        foreach (var item in enemyStatus.EnumerateArray())
+        foreach (var item in doc.RootElement.GetProperty("enemy_status").EnumerateArray())
         {
-            var rawHero = item.GetProperty("hero").GetString() ?? "";
-            var hero = NormalizeHero(rawHero, expectedEnemyHeroes);
-            if (hero is null)
+            var hero = item.GetProperty("hero").GetString();
+            if (string.IsNullOrWhiteSpace(hero))
             {
                 continue;
             }
@@ -154,22 +187,5 @@ public sealed class OpenAiScoreboardExtractor : IScoreboardExtractor
         }
 
         return new ScoreboardExtractionResult(entries);
-    }
-
-    internal static string? NormalizeHero(string rawHero, IReadOnlyList<string> expectedEnemyHeroes)
-    {
-        if (expectedEnemyHeroes.Count == 0)
-        {
-            return rawHero;
-        }
-
-        var exact = expectedEnemyHeroes.FirstOrDefault(e => string.Equals(e, rawHero, StringComparison.OrdinalIgnoreCase));
-        if (exact is not null)
-        {
-            return exact;
-        }
-
-        return expectedEnemyHeroes.FirstOrDefault(e =>
-            rawHero.Contains(e, StringComparison.OrdinalIgnoreCase));
     }
 }

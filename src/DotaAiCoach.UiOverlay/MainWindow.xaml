@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:DotaAiCoach.UiOverlay.ViewModels"
         mc:Ignorable="d"
         Title="Dota AI Coach"
         Width="300"
@@ -15,7 +16,11 @@
         ShowActivated="False"
         ResizeMode="NoResize"
         SizeToContent="Height"
-        MaxHeight="620">
+        MaxHeight="720">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <vm:OwnedOpacityConverter x:Key="OwnedOpacityConverter" />
+    </Window.Resources>
     <!--
         Positioned top-left with a fixed offset, deliberately away from
         the minimap (bottom-left), inventory/ability bar (bottom-center),
@@ -26,46 +31,48 @@
     -->
     <Border Background="#CC101014" CornerRadius="8" Padding="14" BorderBrush="#33FFFFFF" BorderThickness="1">
         <StackPanel>
-            <Grid Margin="0,0,0,8">
+            <!--
+                Drag handle: grabbing anywhere in this header row (except
+                the minimize button itself) moves the window, per the
+                user's explicit request. MouseLeftButtonDown on the Grid
+                fires for clicks on the TextBlock/empty space; the Button
+                consumes its own clicks first so it's unaffected.
+            -->
+            <Grid Margin="0,0,0,8" Background="Transparent" Cursor="SizeAll" MouseLeftButtonDown="OnHeaderMouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="DOTA AI COACH" Foreground="#FFB0B0B0" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" />
                 <!--
-                    Hides to the system tray (see App.xaml.cs's NotifyIcon)
-                    rather than a normal Windows minimize, since this
-                    window has no taskbar presence by design (dota-overlay)
-                    — a real WindowState.Minimized would have no way back.
+                    Collapses the body below into a thin strip (just this
+                    header row stays visible) rather than hiding the whole
+                    window — the player can still see/drag/re-expand it
+                    without going through the tray icon. Toggles between
+                    "_" (collapse) and "▢" (expand) via IsCollapsed.
                 -->
-                <Button Grid.Column="1" Content="_" Click="OnMinimizeClick"
+                <Button Grid.Column="1" Content="{Binding CollapseGlyph}" Click="OnMinimizeClick"
                         Width="22" Height="20" Padding="0" FontSize="12" FontWeight="Bold"
                         Foreground="#FFB0B0B0" Background="Transparent" BorderThickness="0"
-                        ToolTip="Minimize to tray" />
+                        ToolTip="{Binding CollapseTooltip}" />
             </Grid>
 
-            <Grid Margin="0,0,0,4">
+            <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding HeroName}" Foreground="White" FontSize="16" FontWeight="SemiBold" />
-                <TextBlock Grid.Column="1" Text="{Binding ClockText}" Foreground="#FFDDDDDD" FontSize="16" FontFamily="Consolas" />
+                <!--
+                    Current Dota 2 patch (e.g. "7.38c"), fetched once from
+                    OpenDota — see OverlayViewModel.GamePatchText. Shown
+                    here instead of the live clock/KDA/gold/GPM-XPM/LH-DN/
+                    buyback stats per explicit request to trim the overlay
+                    down to identity + patch + the item plan only.
+                -->
+                <TextBlock Grid.Column="1" Text="{Binding GamePatchText}" Foreground="#FFDDDDDD" FontSize="13" FontFamily="Consolas" VerticalAlignment="Center" />
             </Grid>
-
-            <TextBlock Text="{Binding KdaText}" Foreground="#FFCCCCCC" FontSize="13" Margin="0,2,0,0" />
-            <TextBlock Foreground="#FFCCCCCC" FontSize="13" Margin="0,2,0,0">
-                <Run Text="Gold: " /><Run Text="{Binding GoldText, Mode=OneWay}" />
-            </TextBlock>
-            <TextBlock Foreground="#FFCCCCCC" FontSize="13" Margin="0,2,0,0">
-                <Run Text="GPM/XPM: " /><Run Text="{Binding GpmXpmText, Mode=OneWay}" />
-            </TextBlock>
-            <TextBlock Foreground="#FFCCCCCC" FontSize="13" Margin="0,2,0,0">
-                <Run Text="LH/DN: " /><Run Text="{Binding LastHitDenyText, Mode=OneWay}" />
-            </TextBlock>
-            <TextBlock Foreground="#FFCCCCCC" FontSize="13" Margin="0,2,0,8">
-                <Run Text="Buyback: " /><Run Text="{Binding BuybackText, Mode=OneWay}" />
-            </TextBlock>
 
             <!--
                 Always-visible item plan, grouped by phase (Early/Mid/
@@ -89,7 +96,7 @@
                     while still showing everything via scroll, rather than
                     silently clipping content off the bottom edge.
                 -->
-                <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding ItemPlanGroups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -103,11 +110,34 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Width="42" Height="30" Background="#22000000" CornerRadius="3"
-                                                        Margin="0,0,4,4" BorderBrush="#33FFFFFF" BorderThickness="1"
-                                                        ToolTip="{Binding ItemDisplayName}">
-                                                    <Image Source="{Binding IconImage}" Stretch="UniformToFill" />
-                                                </Border>
+                                                <!--
+                                                    Icon + priority-percent label stacked, mirroring
+                                                    Dota's own post-game item-guide win-rate-by-item
+                                                    display (per explicit request/reference image) —
+                                                    PriorityPercentText is empty (label collapsed) for
+                                                    the rule/ML-driven plan, which has no percent.
+                                                    IsOwned dims the cell and adds a checkmark badge
+                                                    instead of removing the item from its phase, since
+                                                    the player wants to see the whole planned build
+                                                    including what's already bought.
+                                                -->
+                                                <StackPanel Margin="0,0,4,4" ToolTip="{Binding ItemDisplayName}">
+                                                    <Grid Width="42" Height="30">
+                                                        <Border Background="#22000000" CornerRadius="3" BorderBrush="#33FFFFFF" BorderThickness="1">
+                                                            <Image Source="{Binding IconImage}" Stretch="UniformToFill"
+                                                                   Opacity="{Binding IsOwned, Converter={StaticResource OwnedOpacityConverter}}" />
+                                                        </Border>
+                                                        <Border Background="#CC1E7A3C" CornerRadius="0,3,0,3"
+                                                                Width="14" Height="14" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                Visibility="{Binding IsOwned, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                            <TextBlock Text="&#10003;" Foreground="White" FontSize="9" FontWeight="Bold"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                        </Border>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding PriorityPercentText}" Foreground="#FFE0B060" FontSize="10" FontWeight="Bold"
+                                                               HorizontalAlignment="Center" Margin="0,2,0,0"
+                                                               Visibility="{Binding HasPriorityPercent, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -120,9 +150,35 @@
 
             <TextBlock Text="{Binding FeedStatusText}" Foreground="#FF777777" FontSize="10" Margin="0,8,0,0" />
 
+            <!--
+                Captures the pre-configured screen region, extracts the
+                enemy scoreboard, and asks the LLM for a full item plan,
+                all in one click, replacing ItemPlanGroups above directly
+                (see OverlayViewModel.CaptureAndAskLlmAsync). No separate
+                window anymore: this used to open a second "Ask LLM"
+                window with its own capture buttons, which just added a
+                click and a context switch for no benefit.
+            -->
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                 <Button Content="Profile" Click="OnProfileClick" Padding="6,3" />
-                <Button Content="Ask LLM" Click="OnAskLlmClick" Padding="6,3" Margin="8,0,0,0" />
+                <Button Content="Capturar pantalla" Click="OnCaptureScreenClick" Padding="6,3" Margin="8,0,0,0"
+                        IsEnabled="{Binding HasCaptureRegion}" ToolTip="{Binding CaptureRegionText}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <Button Content="Configurar region" Click="OnConfigureRegionClick" Padding="6,3" />
+                <Button Content="Configurar tecla" Click="OnConfigureHotKeyClick" Padding="6,3" Margin="8,0,0,0" />
+            </StackPanel>
+            <!--
+                The hotkey (default Ctrl+Tab, see HotKeySettings) runs
+                the same CaptureAndAskLlmAsync pipeline as the button
+                above, so the player can trigger a capture right after
+                opening Dota's own scoreboard (Tab) without alt-tabbing
+                to click anything.
+            -->
+            <TextBlock Text="{Binding HotKeyStatusText}" Foreground="#FF888888" FontSize="11" Margin="0,4,0,0" />
+            <TextBlock Text="{Binding CaptureErrorText}" Foreground="#FFCC5555" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0" />
+            <TextBlock Text="Leyendo captura y pensando el build..." Foreground="#FFAACCAA" FontSize="11" Margin="0,4,0,0"
+                       Visibility="{Binding IsCapturing, Converter={StaticResource BoolToVisibilityConverter}}" />
             </StackPanel>
         </StackPanel>
     </Border>
