@@ -65,6 +65,15 @@ public sealed class OpenDotaHttpClient : IOpenDotaClient, IDisposable
 
     private string BuildUrl(string relativePath)
     {
+        // An absolute URL (e.g. Valve's dota2.com datafeed for the current
+        // patch letter, which OpenDota's /constants/patch omits) is used
+        // verbatim — no base URL prefix, no OpenDota api_key appended.
+        if (relativePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            relativePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return relativePath;
+        }
+
         var separator = relativePath.Contains('?') ? "&" : "?";
         var apiKeySuffix = string.IsNullOrEmpty(_options.ApiKey) ? "" : $"{separator}api_key={_options.ApiKey}";
         return $"{_options.BaseUrl}{relativePath}{apiKeySuffix}";

@@ -86,6 +86,17 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     /// overlay).
     /// </summary>
     private ItemPlan? _llmItemPlan;
+
+    /// <summary>
+    /// Throttles ItemPlanGroups rebuilds to once per <see cref="ItemPlanRefreshInterval"/>
+    /// — the rule-driven fallback plan otherwise recomputes on every GSI
+    /// payload (~1/s), causing the item guide grid to visibly reflow every
+    /// second even though nothing strategically relevant changed. Only the
+    /// item guide panel is throttled; clock/gold/KDA/messages still update
+    /// live on every payload.
+    /// </summary>
+    private static readonly TimeSpan ItemPlanRefreshInterval = TimeSpan.FromMinutes(2);
+    private DateTime _lastItemPlanRefreshUtc = DateTime.MinValue;
     private CaptureRegion? _captureRegion;
     private bool _isCapturing;
     private string? _captureErrorText;
@@ -363,25 +374,30 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             Messages.Add(message);
         }
 
-        ItemPlanGroups.Clear();
-        // Group in the order phases already arrive (NextItemSelector emits
-        // Early, then Mid, then Late, then Situational — see AllPhases),
-        // never re-sorted alphabetically, so the guide reads in
-        // progression order like a real Dota item guide. Once the player
-        // has asked the LLM, its plan takes over from the ML plan (see
-        // SetLlmItemPlan) until the next capture.
-        var effectivePlan = _llmItemPlan ?? itemPlan;
-        foreach (var phaseGroup in effectivePlan.Entries.GroupBy(e => e.PhaseLabel))
+        var now = DateTime.UtcNow;
+        if (now - _lastItemPlanRefreshUtc >= ItemPlanRefreshInterval)
         {
-            var items = new ObservableCollection<ItemPlanDisplayEntry>();
-            var group = new ItemPlanPhaseGroup(phaseGroup.Key.ToUpperInvariant(), items);
-            ItemPlanGroups.Add(group);
-
-            foreach (var entry in phaseGroup)
+            _lastItemPlanRefreshUtc = now;
+            ItemPlanGroups.Clear();
+            // Group in the order phases already arrive (NextItemSelector emits
+            // Early, then Mid, then Late, then Situational — see AllPhases),
+            // never re-sorted alphabetically, so the guide reads in
+            // progression order like a real Dota item guide. Once the player
+            // has asked the LLM, its plan takes over from the ML plan (see
+            // SetLlmItemPlan) until the next capture.
+            var effectivePlan = _llmItemPlan ?? itemPlan;
+            foreach (var phaseGroup in effectivePlan.Entries.GroupBy(e => e.PhaseLabel))
             {
-                var display = new ItemPlanDisplayEntry(entry.ItemDisplayName, entry.PriorityPercent, state.Items.Owns(entry.ItemId));
-                items.Add(display);
-                LoadIconAsync(display, entry.ItemId);
+                var items = new ObservableCollection<ItemPlanDisplayEntry>();
+                var group = new ItemPlanPhaseGroup(phaseGroup.Key.ToUpperInvariant(), items);
+                ItemPlanGroups.Add(group);
+
+                foreach (var entry in phaseGroup)
+                {
+                    var display = new ItemPlanDisplayEntry(entry.ItemDisplayName, entry.PriorityPercent, state.Items.Owns(entry.ItemId));
+                    items.Add(display);
+                    LoadIconAsync(display, entry.ItemId);
+                }
             }
         }
 

@@ -36,6 +36,59 @@ internal sealed class ProfileSession : IProfileSession
             return _cachedGamePatch;
         }
 
+        // Valve's own datafeed lists patches including the sub-patch letter
+        // (e.g. "7.41e"), which matters because item numbers get tuned in
+        // lettered patches. OpenDota's /constants/patch only carries the
+        // major version ("7.41"), so we prefer the datafeed and fall back
+        // to OpenDota if it is unreachable.
+        _cachedGamePatch = await TryGetPatchFromDatafeedAsync(ct).ConfigureAwait(false)
+            ?? await TryGetPatchFromOpenDotaAsync(ct).ConfigureAwait(false);
+
+        return _cachedGamePatch;
+    }
+
+    private async Task<string?> TryGetPatchFromDatafeedAsync(CancellationToken ct)
+    {
+        var (response, _) = await _cachingClient
+            .GetWithAvailabilityAsync("https://www.dota2.com/datafeed/patchnoteslist", GamePatchTtl, ct)
+            .ConfigureAwait(false);
+        if (response.RawJson is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(response.RawJson);
+            if (!doc.RootElement.TryGetProperty("patches", out var patches) || patches.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            // Newest patch = highest timestamp; the array order is not guaranteed.
+            long newestTs = long.MinValue;
+            string? newestName = null;
+            foreach (var patch in patches.EnumerateArray())
+            {
+                if (patch.TryGetProperty("patch_timestamp", out var tsProp) &&
+                    tsProp.TryGetInt64(out var ts) && ts > newestTs &&
+                    patch.TryGetProperty("patch_name", out var nameProp))
+                {
+                    newestTs = ts;
+                    newestName = nameProp.GetString();
+                }
+            }
+
+            return string.IsNullOrWhiteSpace(newestName) ? null : newestName;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private async Task<string?> TryGetPatchFromOpenDotaAsync(CancellationToken ct)
+    {
         var (response, _) = await _cachingClient.GetWithAvailabilityAsync("/constants/patch", GamePatchTtl, ct).ConfigureAwait(false);
         if (response.RawJson is null)
         {
@@ -48,17 +101,16 @@ internal sealed class ProfileSession : IProfileSession
             var last = doc.RootElement.EnumerateArray().LastOrDefault();
             if (last.ValueKind == JsonValueKind.Object && last.TryGetProperty("name", out var nameProp))
             {
-                _cachedGamePatch = nameProp.GetString();
+                return nameProp.GetString();
             }
         }
         catch (JsonException)
         {
-            // Malformed/unexpected response shape — leave _cachedGamePatch
-            // null rather than guessing; the overlay shows nothing instead
-            // of a wrong patch.
+            // Malformed/unexpected response shape — return null rather than
+            // guessing; the overlay shows nothing instead of a wrong patch.
         }
 
-        return _cachedGamePatch;
+        return null;
     }
 
     public async Task<PlayerProfileSnapshot> RefreshAsync(string steamIdInput, CancellationToken ct)
